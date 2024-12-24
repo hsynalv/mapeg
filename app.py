@@ -55,8 +55,8 @@ Cevabın kullanıcı dostu ve düzenli olsun.
 """
 
 # Excel dosyalarının yolları
-mali_uzmanlar_path = 'E:/Projeler/Mapeg/demo/mali uzman ve harita mühendisi diğer.xlsx'
-maden_uzmanlari_path = 'E:/Projeler/Mapeg/demo/MEVCUT YERALTI MADEN UZMANLARI VE GÖREVLERİ düzenli fp.xlsx'
+mali_uzmanlar_path = 'mali uzman ve harita mühendisi diğer.xlsx'
+maden_uzmanlari_path = 'MEVCUT YERALTI MADEN UZMANLARI VE GÖREVLERİ düzenli fp.xlsx'
 
 # Excel dosyalarını oku
 mali_uzmanlar_df = pd.read_excel(mali_uzmanlar_path)
