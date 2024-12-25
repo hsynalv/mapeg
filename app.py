@@ -237,7 +237,6 @@ def generate_teams(num_teams):
     result = {
         "teams": teams,
         "total_teams": len(teams),
-        "created_by": "Dil Modeli",
         "date_created": datetime.now().strftime("%Y-%m-%d")
     }
 
