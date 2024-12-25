@@ -22,9 +22,12 @@
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
         }
         .chat-box {
-            height: 500px;
+            flex: 1;
             overflow-y: auto;
             padding: 20px;
         }
@@ -66,13 +69,53 @@
             color: #666;
             font-style: italic;
         }
+        .sidebar {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+        }
+        .sidebar button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Yan Menü - Yeni Sohbet Butonu -->
+    <div class="sidebar">
+        <button class="new-chat" onclick="startNewChat()">➕ Yeni Sohbet</button>
+        <h3>Geçmiş Sohbetler</h3>
+        <ul>
+            {% for chat in chat_list %}
+            <li>
+                <button onclick="loadChat('{{ chat }}')">{{ chat }}</button>
+            </li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Sohbet Kutusu -->
     <div class="chat-container">
         <div class="chat-box" id="chatBox">
-            <div class="message ai-message">Merhaba! Ekip oluşturmak için buraya yazabilirsin.</div>
+            {% if chat_history %}
+                {% for message in chat_history %}
+                    <div class="message {{ 'user-message' if message.role == 'user' else 'ai-message' }}">
+                        {{ message.content }}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="message ai-message">Merhaba! Ekip oluşturmak için buraya yazabilirsin.</div>
+            {% endif %}
         </div>
+
+        <!-- Mesaj Gönderme Formu -->
         <form class="chat-input" id="chatForm">
             <textarea name="prompt" rows="1" placeholder="Ekip oluşturma talebinizi yazın..." required></textarea>
             <button type="submit">Gönder</button>
@@ -106,7 +149,6 @@
             loadingMessage.textContent = "Ekip oluşturuluyor, lütfen bekleyin...";
             chatBox.appendChild(loadingMessage);
 
-
             try {
                 // API'ye istek gönder
                 const response = await fetch('/generate', {
@@ -135,6 +177,30 @@
             // Sayfanın en altına kaydır
             chatBox.scrollTop = chatBox.scrollHeight;
         }
+
+        // Yeni Sohbet Başlatma
+        async function startNewChat() {
+            const response = await fetch('/new_chat', { method: 'POST' });
+            const data = await response.json();
+            location.reload();
+        }
+
+        async function loadChat(chatId) {
+        const response = await fetch(`/load_chat/${chatId}`);
+        const result = await response.json();
+
+        const chatBox = document.getElementById('chatBox');
+        chatBox.innerHTML = '';
+
+        result.chat_history.forEach(message => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + (message.role === 'user' ? 'user-message' : 'ai-message');
+            msgDiv.innerHTML = message.content;
+            chatBox.appendChild(msgDiv);
+        });
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
     </script>
 </body>
 </html>

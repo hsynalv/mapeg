@@ -1,56 +1,112 @@
 import os
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, make_response
 import openai
 import pandas as pd
-import numpy as np
+import uuid
 import json
 import random
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-app = Flask(__name__, template_folder='app/templates')
+app = Flask(__name__, static_folder='app/static', template_folder='app/templates')
 
 load_dotenv()  # .env dosyasını yükle
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 DUTY = """
-Sen bir ekip oluşturma asistanısın. Kullanıcının belirttiği ekip sayısına göre ekipler oluşturuldu ve aşağıdaki formatta sana gönderildi:
+**Asistan**, "MAPEG" kurumu için maden sahalarına göndermek için oluşturulacak heyet sayısını belirlemenize yardımcı olmak amacıyla **Horiar AI** tarafından geliştirilmiştir. Göreviniz, ihtiyaç duyulan heyet sayısını tespit etmek ve bunu yaparken samimi bir sohbet tonu korumaktır. Aşağıdaki talimatlara uyarak görevinizi yerine getiriniz.
+
+---
+
+## Yanıt Formatı ve Kurallar
+
+Yanıtlarınızı **mutlaka** JSON formatında verin ve aşağıdaki kurallara uyun:
+
+1. **Yeterlilik:**
+   - Eğer kullanıcı, ihtiyaç duyulan heyet sayısını **net** bir şekilde belirtmişse:
+     - `"Yeterlilik"` alanını `"true"` olarak ayarlayın.
+     - `"Sayı"` alanına da kullanıcının belirttiği sayıyı yazın.
+     - `"Yanıt"` alanı boş bir dize (`""`) olsun.
+   - Eğer kullanıcı net bir sayı belirtmemiş ya da bilgi yetersizse:
+     - `"Yeterlilik"` alanını `"false"` olarak ayarlayın.
+     - `"Sayı"` alanına `0` yazın.
+     - `"Yanıt"` alanına, kullanıcıdan göndermek istedikleri heyet sayısını dostça ve nazikçe tekrar soran bir metin yazın.
+
+### Çıktı Formatı
+
+Yanıt, aşağıdaki JSON yapısını içermelidir:
+
 
 {
-  "teams": [
-    {
-      "team_id": 1,
-      "target_city": "Ankara",
-      "members": [
-        {"role": "Maden Mühendisi", "name": "Ahmet Özdemir"},
-        {"role": "Jeoloji Mühendisi", "name": "Mehmet Kanbur"},
-        {"role": "Mali Uzman Y.", "name": "Seyfettin Özdemir"}
-      ]
-    }
-  ],
-  "total_teams": 1,
-  "created_by": "Dil Modeli",
-  "date_created": "2024-12-24"
+  "Yeterlilik": "bool",
+  "Sayı": "int",
+  "Yanıt": "string"
 }
 
-Bu veriyi al ve kullanıcının anlayacağı düzenli bir şekilde her bir ekibi listele. Aşağıdaki formatı kullanarak cevabını hazırla:
 
-Örnek:  
-1. **Ekip 1 (Ankara)**  
-- Maden Mühendisi: Ahmet Özdemir  
-- Jeoloji Mühendisi: Mehmet Kanbur  
-- Mali Uzman: Seyfettin Özdemir  
+---
 
-2. **Ekip 2 (İzmir)**  
-- Maden Mühendisi: Veli Demir  
-- Jeoloji Mühendisi: Hasan Yılmaz  
-- Mali Uzman: Hakan Acar  
+## Örnekler
 
-Eğer hiç ekip oluşturulmadıysa şu mesajı ver:  
-"Uygun mühendis veya uzman bulunamadı. Lütfen tekrar deneyin."
+**Örnek Kullanıcı Girdisi**:  
+> 5 adet heyet gönderir misin?
 
-Cevabın kullanıcı dostu ve düzenli olsun.
+
+{
+  "Yeterlilik": True,
+  "Sayı": 5,
+  "Yanıt": ""
+}
+
+
+---
+
+**Örnek Kullanıcı Girdisi**:  
+> 12
+
+
+{
+  "Yeterlilik": True,
+  "Sayı": "12",
+  "Yanıt": ""
+}
+
+
+---
+
+**Örnek Kullanıcı Girdisi**:  
+> 0
+
+
+{
+  "Yeterlilik":False,
+  "Sayı": 0,
+  "Yanıt": "**0 heyet görevlendirmesi yapamayacağınızı belirtip kibarca tekrar sorun.**"
+}
+
+
+---
+
+**Örnek Kullanıcı Girdisi**:  
+> Selam
+
+
+{
+  "Yeterlilik": False,
+  "Sayı": 0,
+  "Yanıt": "**Kibarca selamlaşıp detay talep et.**"
+}
+
+
+---
+
+## Notlar
+
+- **0 heyet gönderilemeyeceği** için, kullanıcı bu talepte bulunursa mutlaka daha fazla bilgi isteyin.  
+- Her zaman nazik ve samimi bir üslup kullanmaya özen gösterin.  
+- Hem sayısal hem de sayısal olmayan girdileri doğru şekilde ayırt edip değerlendirin.  
+- Yanıtınızı **her zaman** geçerli bir JSON biçiminde sunun.
 
 """
 
@@ -78,9 +134,52 @@ team_history = {}
 pairing_history = {}
 selected_members = set()
 team_id_counter = 1
-WAITING_PERIOD = timedelta(days=10)
-target_cities = ["Ankara", "İstanbul", "İzmir", "Bursa", "Antalya"]
+WAITING_PERIOD = timedelta(days=1)
 
+# Türkiye'nin 81 ili
+target_cities = [
+    "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin",
+    "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur",
+    "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan",
+    "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkâri", "Hatay", "Iğdır", "Isparta", "İstanbul",
+    "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli",
+    "Kırşehir", "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş",
+    "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas",
+    "Şanlıurfa", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
+]
+
+CHAT_HISTORY_DIR = 'chat_history'
+CHAT_LIST_FILE = os.path.join(CHAT_HISTORY_DIR, 'chat_list.json')
+
+# Klasörü oluştur
+if not os.path.exists(CHAT_HISTORY_DIR):
+    os.makedirs(CHAT_HISTORY_DIR)
+
+
+def load_chat_history(chat_id):
+    chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{chat_id}.json')
+    if os.path.exists(chat_file):
+        with open(chat_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {"messages": []}
+
+def save_chat_history(chat_id, chat_data):
+    chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{chat_id}.json')
+    with open(chat_file, 'w', encoding='utf-8') as f:
+        json.dump(chat_data, f, ensure_ascii=False, indent=4)
+
+def save_chat_to_list(chat_id):
+    if os.path.exists(CHAT_LIST_FILE):
+        with open(CHAT_LIST_FILE, 'r', encoding='utf-8') as f:
+            chat_list = json.load(f)
+    else:
+        chat_list = []
+
+    if chat_id not in chat_list:
+        chat_list.append(chat_id)
+
+    with open(CHAT_LIST_FILE, 'w', encoding='utf-8') as f:
+        json.dump(chat_list, f, ensure_ascii=False, indent=4)
 
 def create_team(team_id):
     global team_history, pairing_history, selected_members
@@ -117,7 +216,6 @@ def create_team(team_id):
     }
     return team
 
-
 def generate_teams(num_teams):
     global team_id_counter
     teams = []
@@ -139,54 +237,113 @@ def generate_teams(num_teams):
 
     return result
 
+@app.route('/', methods=['GET'])
+def index():
+    chat_id = request.cookies.get('chat_id')
+    if not chat_id:
+        chat_id = str(uuid.uuid4())
+        response = make_response(render_template('index.html', chat_list=[]))
+        response.set_cookie('chat_id', chat_id, max_age=90 * 24 * 60 * 60)
+        return response
 
-# Prompt işleyen endpoint
+    chat_data = load_chat_history(chat_id)
+
+    # Sohbet listesini yükle
+    if os.path.exists(CHAT_LIST_FILE):
+        with open(CHAT_LIST_FILE, 'r', encoding='utf-8') as f:
+            chat_list = json.load(f)
+    else:
+        chat_list = []
+
+    return render_template('index.html', chat_history=chat_data['messages'], chat_list=chat_list)
+
+# Yeni sohbet başlat
+@app.route('/new_chat', methods=['POST'])
+def new_chat():
+    new_chat_id = str(uuid.uuid4())  # Yeni sohbet için UUID oluştur
+    chat_id = request.cookies.get('chat_id')
+    save_chat_to_list(chat_id)  # Sohbet listesine ekle
+    response = make_response(jsonify({"chat_id": chat_id}))
+    response.set_cookie('chat_id', new_chat_id, max_age=90 * 24 * 60 * 60)
+    return response
+@app.route('/load_chat/<chat_id>', methods=['GET'])
+def load_chat(chat_id):
+    chat_data = load_chat_history(chat_id)
+    return jsonify({"chat_history": chat_data['messages']})
+
 @app.route('/generate', methods=['POST'])
 def generate():
     user_input = request.form['prompt']
+    chat_id = request.cookies.get('chat_id')
+
+    if not chat_id:
+        chat_id = str(uuid.uuid4())
+        save_chat_to_list(chat_id)  # Sohbet listesine ekle
+
+    chat_data = load_chat_history(chat_id)
+    chat_data['messages'].append({"role": "user", "content": user_input})
 
     try:
-        # OpenAI'den ekip sayısını al
+        # Dil modelinden ilk kontrol: Sayı var mı?
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Kullanıcının belirttiği ekip sayısını ver. Örnek: '5 ekip istiyorum' -> '5'"},
+                {"role": "system", "content": DUTY},
                 {"role": "user", "content": user_input}
             ]
         )
-        ekip_sayisi = int(response.choices[0].message.content.strip())
 
-        # Algoritmayı çağır
-        result = generate_teams(ekip_sayisi)
+        try:
+            print(response.choices[0].message.content)
+            model_output = json.loads(response.choices[0].message.content)
+        except json.JSONDecodeError:
+            # JSON formatında cevap vermezse hata dön
+            final_output = "Yanıtta bir hata oluştu. Lütfen tekrar deneyin."
+            chat_data['messages'].append({"role": "assistant", "content": final_output})
+            save_chat_history(chat_id, chat_data)
+            return jsonify({"response": final_output})
 
-        # Oluşan ekip listesini dil modeline gönder
-        formatted_result = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Verilen JSON formatındaki ekip listesini HTML formatında aşağıdaki gibi düzenle:\n"
-                                              "Her ekibi madde işareti veya numaralandırma ile alt alta yaz. "
-                                              "Örneğin:\n"
-                                              "<ul>\n"
-                                              "<li><strong>Ekip 1 (Ankara)</strong><br>- Maden Mühendisi: Ahmet Özdemir<br>- Jeoloji Mühendisi: Mehmet Kanbur<br>- Mali Uzman: Ertan Duman</li>\n"
-                                              "<li><strong>Ekip 2 (İzmir)</strong><br>- Maden Mühendisi: Hasan Yılmaz<br>- Jeoloji Mühendisi: Murat Gürbüz<br>- Mali Uzman: Veli Demir</li>\n"
-                                              "</ul>"},
-                {"role": "user", "content": f"{json.dumps(result, ensure_ascii=False)}"}
-            ]
-        )
+        is_available = bool(model_output.get("Yeterlilik"))
+        print(f"is available ?: {is_available}")
+        print(f"is available türü?: {type(is_available)}")
 
-        final_output = formatted_result.choices[0].message.content
+        if is_available is True:
+            ekip_sayisi = int(model_output.get("Sayı"))
+            print(f"ekip sayısı: {ekip_sayisi}")
+            print(f"ekip sayısı türü: {type(ekip_sayisi)}")
 
-    except ValueError:
-        final_output = "Lütfen geçerli bir ekip sayısı belirtin."
+            # Sayıya dönüştürmeye çalış
+            try:
+                result = generate_teams(ekip_sayisi)
+
+                # Oluşan ekipleri formatla
+                formatted_result = openai.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": "Verilen JSON formatındaki ekip listesini HTML formatında düzenle."
+                                                      "Her ekibi numaralandırma ile alt alta yaz. "
+                                                      "Örneğin:\n<ul>\n"
+                                                      "<li><strong>Ekip 1 (Ankara)</strong><br>- Maden Mühendisi: Ahmet Özdemir<br>"
+                                                      "- Jeoloji Mühendisi: Mehmet Kanbur<br>- Mali Uzman: Ertan Duman</li>\n"
+                                                      "</ul>"},
+                        {"role": "user", "content": f"{json.dumps(result, ensure_ascii=False)}"}
+                    ]
+                )
+                final_output = formatted_result.choices[0].message.content
+
+            except ValueError:
+                # Sayıya dönüşmezse dil modelinin cevabını döndür
+                final_output = model_output
+                chat_data['messages'].append({"role": "assistant", "content": final_output})
+        else:
+            final_output = model_output.get("Yanıt")
+
     except Exception as e:
         final_output = f"Hata: {str(e)}"
 
+    chat_data['messages'].append({"role": "assistant", "content": final_output})
+    save_chat_history(chat_id, chat_data)
     return jsonify({"response": final_output})
-
-
-@app.route('/', methods=['GET'])
-def index():
-    return render_template('index.html')
 
 
 if __name__ == '__main__':
