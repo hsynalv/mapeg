@@ -322,7 +322,13 @@ def generate():
             formatted_result = openai.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "Verilen JSON formatındaki ekip listesini HTML formatında düzenle."},
+                    {"role": "system", "content": "Verilen JSON formatındaki ekip listesini HTML formatında aşağıdaki gibi düzenle:\n"
+                                                 "Her ekibi madde işareti veya numaralandırma ile alt alta yaz. "
+                                                 "Örneğin:\n"
+                                                 "<ul>\n"
+                                                 "<li><strong>Ekip 1 (Ankara)</strong><br>- Maden Mühendisi: Ahmet Özdemir<br>- Jeoloji Mühendisi: Mehmet Kanbur<br>- Mali Uzman: Ertan Duman</li>\n"
+                                                 "<li><strong>Ekip 2 (İzmir)</strong><br>- Maden Mühendisi: Hasan Yılmaz<br>- Jeoloji Mühendisi: Murat Gürbüz<br>- Mali Uzman: Veli Demir</li>\n"
+                                                 "</ul>"},
                     {"role": "user", "content": f"{json.dumps(result, ensure_ascii=False)}"}
                 ]
             )
