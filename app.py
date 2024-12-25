@@ -156,29 +156,35 @@ if not os.path.exists(CHAT_HISTORY_DIR):
     os.makedirs(CHAT_HISTORY_DIR)
 
 
-def load_chat_history(chat_id):
-    chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{chat_id}.json')
+def load_chat_list(user_id):
+    user_chat_list_file = os.path.join(CHAT_HISTORY_DIR, f'chat_list_{user_id}.json')
+    if os.path.exists(user_chat_list_file):
+        with open(user_chat_list_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+def load_chat_history(user_id, chat_id):
+    print(f"user_id: {user_id}")
+    print(f"chat_id: {chat_id}")
+    chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{user_id}_{chat_id}.json')
+    print(chat_file)
     if os.path.exists(chat_file):
         with open(chat_file, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {"messages": []}
 
-def save_chat_history(chat_id, chat_data):
-    chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{chat_id}.json')
+def save_chat_history(user_id, chat_id, chat_data):
+    chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{user_id}_{chat_id}.json')
     with open(chat_file, 'w', encoding='utf-8') as f:
         json.dump(chat_data, f, ensure_ascii=False, indent=4)
 
-def save_chat_to_list(chat_id):
-    if os.path.exists(CHAT_LIST_FILE):
-        with open(CHAT_LIST_FILE, 'r', encoding='utf-8') as f:
-            chat_list = json.load(f)
-    else:
-        chat_list = []
-
+def save_chat_to_list(user_id, chat_id):
+    chat_list = load_chat_list(user_id)
     if chat_id not in chat_list:
         chat_list.append(chat_id)
 
-    with open(CHAT_LIST_FILE, 'w', encoding='utf-8') as f:
+    user_chat_list_file = os.path.join(CHAT_HISTORY_DIR, f'chat_list_{user_id}.json')
+    with open(user_chat_list_file, 'w', encoding='utf-8') as f:
         json.dump(chat_list, f, ensure_ascii=False, indent=4)
 
 def create_team(team_id):
@@ -237,54 +243,69 @@ def generate_teams(num_teams):
 
     return result
 
+
 @app.route('/', methods=['GET'])
 def index():
-    chat_id = request.cookies.get('chat_id')
-    if not chat_id:
-        chat_id = str(uuid.uuid4())
-        response = make_response(render_template('index.html', chat_list=[]))
-        response.set_cookie('chat_id', chat_id, max_age=90 * 24 * 60 * 60)
-        return response
+    user_id = request.cookies.get('user_id')  # Kullanıcı ID'si çerezi
 
-    chat_data = load_chat_history(chat_id)
-
-    # Sohbet listesini yükle
-    if os.path.exists(CHAT_LIST_FILE):
-        with open(CHAT_LIST_FILE, 'r', encoding='utf-8') as f:
-            chat_list = json.load(f)
+    if user_id:
+        chat_list = load_chat_list(user_id)
+        response = make_response(render_template('index.html', chat_list=chat_list))
     else:
-        chat_list = []
+        response = make_response(render_template('index.html', chat_list=[]))
+        user_id = str(uuid.uuid4())
+        response.set_cookie('user_id', user_id, max_age=90 * 24 * 60 * 60)  # 3 ay
 
-    return render_template('index.html', chat_history=chat_data['messages'], chat_list=chat_list)
+
+    chat_id = str(uuid.uuid4())
+    response.set_cookie('chat_id', chat_id, max_age=90 * 24 * 60 * 60)  # 3 ay
+
+    return response
 
 # Yeni sohbet başlat
 @app.route('/new_chat', methods=['POST'])
 def new_chat():
-    new_chat_id = str(uuid.uuid4())  # Yeni sohbet için UUID oluştur
+    user_id = request.cookies.get('user_id')
     chat_id = request.cookies.get('chat_id')
-    save_chat_to_list(chat_id)  # Sohbet listesine ekle
-    response = make_response(jsonify({"chat_id": chat_id}))
+    new_chat_id = str(uuid.uuid4())  # Yeni sohbet için UUID oluştur
+
+    if not user_id:
+        user_id = str(uuid.uuid4())  # Yeni kullanıcı için user_id oluştur
+
+    save_chat_to_list(user_id, chat_id)  # Sohbet listesine ekle
+
+    response = make_response(jsonify({"chat_id": new_chat_id}))
     response.set_cookie('chat_id', new_chat_id, max_age=90 * 24 * 60 * 60)
+    response.set_cookie('user_id', user_id, max_age=90 * 24 * 60 * 60)
     return response
+
 @app.route('/load_chat/<chat_id>', methods=['GET'])
 def load_chat(chat_id):
-    chat_data = load_chat_history(chat_id)
-    return jsonify({"chat_history": chat_data['messages']})
+    user_id = request.cookies.get('user_id')
+    chat_data = load_chat_history(user_id, chat_id)
+
+    response = make_response(jsonify({"chat_history": chat_data['messages']}))
+    response.set_cookie("chat_id",chat_id)
+
+    return response
 
 @app.route('/generate', methods=['POST'])
 def generate():
     user_input = request.form['prompt']
     chat_id = request.cookies.get('chat_id')
+    user_id = request.cookies.get('user_id')
 
-    if not chat_id:
-        chat_id = str(uuid.uuid4())
-        save_chat_to_list(chat_id)  # Sohbet listesine ekle
+    if not user_id:
+        user_id = str(uuid.uuid4())
+        save_chat_to_list(user_id, chat_id)
 
-    chat_data = load_chat_history(chat_id)
+    # Sohbet listesine eklenip eklenmediğini kontrol et
+    save_chat_to_list(user_id, chat_id)  # Eğer listede yoksa ekler
+
+    chat_data = load_chat_history(user_id, chat_id)
     chat_data['messages'].append({"role": "user", "content": user_input})
 
     try:
-        # Dil modelinden ilk kontrol: Sayı var mı?
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -292,49 +313,20 @@ def generate():
                 {"role": "user", "content": user_input}
             ]
         )
-
-        try:
-            print(response.choices[0].message.content)
-            model_output = json.loads(response.choices[0].message.content)
-        except json.JSONDecodeError:
-            # JSON formatında cevap vermezse hata dön
-            final_output = "Yanıtta bir hata oluştu. Lütfen tekrar deneyin."
-            chat_data['messages'].append({"role": "assistant", "content": final_output})
-            save_chat_history(chat_id, chat_data)
-            return jsonify({"response": final_output})
-
+        model_output = json.loads(response.choices[0].message.content)
         is_available = bool(model_output.get("Yeterlilik"))
-        print(f"is available ?: {is_available}")
-        print(f"is available türü?: {type(is_available)}")
 
-        if is_available is True:
+        if is_available:
             ekip_sayisi = int(model_output.get("Sayı"))
-            print(f"ekip sayısı: {ekip_sayisi}")
-            print(f"ekip sayısı türü: {type(ekip_sayisi)}")
-
-            # Sayıya dönüştürmeye çalış
-            try:
-                result = generate_teams(ekip_sayisi)
-
-                # Oluşan ekipleri formatla
-                formatted_result = openai.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "Verilen JSON formatındaki ekip listesini HTML formatında düzenle."
-                                                      "Her ekibi numaralandırma ile alt alta yaz. "
-                                                      "Örneğin:\n<ul>\n"
-                                                      "<li><strong>Ekip 1 (Ankara)</strong><br>- Maden Mühendisi: Ahmet Özdemir<br>"
-                                                      "- Jeoloji Mühendisi: Mehmet Kanbur<br>- Mali Uzman: Ertan Duman</li>\n"
-                                                      "</ul>"},
-                        {"role": "user", "content": f"{json.dumps(result, ensure_ascii=False)}"}
-                    ]
-                )
-                final_output = formatted_result.choices[0].message.content
-
-            except ValueError:
-                # Sayıya dönüşmezse dil modelinin cevabını döndür
-                final_output = model_output
-                chat_data['messages'].append({"role": "assistant", "content": final_output})
+            result = generate_teams(ekip_sayisi)
+            formatted_result = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "Verilen JSON formatındaki ekip listesini HTML formatında düzenle."},
+                    {"role": "user", "content": f"{json.dumps(result, ensure_ascii=False)}"}
+                ]
+            )
+            final_output = formatted_result.choices[0].message.content
         else:
             final_output = model_output.get("Yanıt")
 
@@ -342,8 +334,10 @@ def generate():
         final_output = f"Hata: {str(e)}"
 
     chat_data['messages'].append({"role": "assistant", "content": final_output})
-    save_chat_history(chat_id, chat_data)
+    save_chat_history(user_id, chat_id, chat_data)
+
     return jsonify({"response": final_output})
+
 
 
 if __name__ == '__main__':
