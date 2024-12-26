@@ -254,7 +254,7 @@
             // AI cevabını ekle
             const aiMessage = document.createElement('div');
             aiMessage.className = 'message ai-message';
-            aiMessage.innerHTML = result.response || "Beklenmedik bir hata oluştu.";
+            aiMessage.innerText = result.response || "Beklenmedik bir hata oluştu.";
             chatBox.appendChild(aiMessage);
         } catch (error) {
             chatBox.removeChild(loadingMessage);
