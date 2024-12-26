@@ -85,6 +85,17 @@
             font-size: 16px;
         }
 
+        .delete-all {
+            margin-top: auto;  /* Butonu en alta iter */
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
         .loading-dots {
                 display: inline-flex;
                 justify-content: center;
@@ -132,6 +143,7 @@
             {% endfor %}
         </ul>
 
+        <button class="delete-all" onclick="deleteAllChats()">🗑️ Tüm Sohbetleri Sil</button>
     </div>
 
     <!-- Sohbet Kutusu -->
@@ -155,79 +167,94 @@
         </form>
     </div>
 
-    <script>
-        const form = document.getElementById('chatForm');
-        const chatBox = document.getElementById('chatBox');
+<script>
+    const form = document.getElementById('chatForm');
+    const chatBox = document.getElementById('chatBox');
+    const textarea = form.querySelector('textarea');
 
-        form.onsubmit = async (e) => {
+    // Form gönderildiğinde çalışacak ana işlem
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        sendMessage();
+    };
+
+    // Enter tuşuna basıldığında formu gönder, Shift + Enter yeni satır ekler
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            const formData = new FormData(form);
-            const userInput = formData.get('prompt').trim();
+            form.requestSubmit();
+        }
+    });
 
-            if (!userInput) {
-                alert("Lütfen bir mesaj girin.");
-                return;
-            }
+    // Mesaj gönderme işlevi
+    async function sendMessage() {
+        const formData = new FormData(form);
+        const userInput = formData.get('prompt').trim();
 
-            // Kullanıcı mesajını ekle
-            const userMessage = document.createElement('div');
-            userMessage.className = 'message user-message';
-            userMessage.textContent = userInput;
-            chatBox.appendChild(userMessage);
-            form.reset();
-
-            // Yükleniyor mesajı ekle
-            const loadingMessage = document.createElement('div');
-            loadingMessage.className = 'message ai-message loading';
-
-            const dotsContainer = document.createElement('div');
-            dotsContainer.className = 'loading-dots';
-            dotsContainer.innerHTML = `
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-            `;
-
-            loadingMessage.appendChild(dotsContainer);
-            chatBox.appendChild(loadingMessage);
-
-            try {
-                // API'ye istek gönder
-                const response = await fetch('/generate', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-
-                // Yükleniyor mesajını kaldır
-                chatBox.removeChild(loadingMessage);
-
-                // AI cevabını ekle
-                const aiMessage = document.createElement('div');
-                aiMessage.className = 'message ai-message';
-                aiMessage.innerHTML = result.response || "Beklenmedik bir hata oluştu.";
-                chatBox.appendChild(aiMessage);
-            } catch (error) {
-                chatBox.removeChild(loadingMessage);
-
-                const errorMessage = document.createElement('div');
-                errorMessage.className = 'message ai-message';
-                errorMessage.textContent = "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
-                chatBox.appendChild(errorMessage);
-            }
-
-            // Sayfanın en altına kaydır
-            chatBox.scrollTop = chatBox.scrollHeight;
+        if (!userInput) {
+            alert("Lütfen bir mesaj girin.");
+            return;
         }
 
-        // Yeni Sohbet Başlatma
-        async function startNewChat() {
-            const response = await fetch('/new_chat', { method: 'POST' });
-            const data = await response.json();
-            location.reload();
+        // Kullanıcı mesajını ekle
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message user-message';
+        userMessage.textContent = userInput;
+        chatBox.appendChild(userMessage);
+        form.reset();
+
+        // Yükleniyor animasyonu ekle
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'message ai-message loading';
+
+        const dotsContainer = document.createElement('div');
+        dotsContainer.className = 'loading-dots';
+        dotsContainer.innerHTML = `
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        `;
+        loadingMessage.appendChild(dotsContainer);
+        chatBox.appendChild(loadingMessage);
+
+        try {
+            // API'ye POST isteği gönder
+            const response = await fetch('/generate', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            // Yükleniyor mesajını kaldır
+            chatBox.removeChild(loadingMessage);
+
+            // AI cevabını ekle
+            const aiMessage = document.createElement('div');
+            aiMessage.className = 'message ai-message';
+            aiMessage.innerHTML = result.response || "Beklenmedik bir hata oluştu.";
+            chatBox.appendChild(aiMessage);
+        } catch (error) {
+            chatBox.removeChild(loadingMessage);
+
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'message ai-message';
+            errorMessage.textContent = "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+            chatBox.appendChild(errorMessage);
         }
 
-        async function loadChat(chatId) {
+        // Sohbet kutusunu en alta kaydır
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Yeni Sohbet Başlatma
+    async function startNewChat() {
+        const response = await fetch('/new_chat', { method: 'POST' });
+        const data = await response.json();
+        location.reload();
+    }
+
+    // Geçmiş sohbetleri yükleme
+    async function loadChat(chatId) {
         const response = await fetch(`/load_chat/${chatId}`);
         const result = await response.json();
 
@@ -243,6 +270,18 @@
 
         chatBox.scrollTop = chatBox.scrollHeight;
     }
-    </script>
+
+    // Tüm sohbetleri silme
+    async function deleteAllChats() {
+        const confirmed = confirm("Tüm sohbetleri silmek istediğinize emin misiniz?");
+        if (confirmed) {
+            const response = await fetch('/delete_all_chats', { method: 'POST' });
+            const result = await response.json();
+            alert(result.message);
+            location.reload();
+        }
+    }
+</script>
+
 </body>
 </html>

@@ -344,6 +344,19 @@ def generate():
     return jsonify({"response": final_output})
 
 
+@app.route('/delete_all_chats', methods=['POST'])
+def delete_all_chats():
+    try:
+        chat_files = os.listdir(CHAT_HISTORY_DIR)
+        for file in chat_files:
+            file_path = os.path.join(CHAT_HISTORY_DIR, file)
+            os.remove(file_path)
+
+        return jsonify({"message": "Tüm sohbet geçmişi başarıyla silindi."})
+    except Exception as e:
+        return jsonify({"message": f"Hata: {str(e)}"}), 500
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
