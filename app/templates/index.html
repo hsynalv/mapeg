@@ -52,13 +52,13 @@
             max-width: 70%;
         }
         .user-message {
-            background-color: #007BFF;
+            background-color: #515151;
             color: white;
             margin-left: auto;
         }
         .ai-message {
-            background-color: #f1f1f1;
-            color: #333;
+            background-color: #717171;
+            color: white;
             margin-right: auto;
         }
         .loading {
@@ -136,7 +136,7 @@
             </div>
 
             <ul class="conversations">
-                <h3 class="grouping">Geçmiş Sohbetler</h3>
+                <h3 class="grouping" style="color: #9ca6b5">Geçmiş Sohbetler</h3>
                 {% for chat in chat_list %}
         <li class="active">
             <li>
@@ -147,10 +147,8 @@
             </ul>
         </div>
         <div class="user-menu">
-            <button>
-                <i class="user-icon">M</i>
-                Mapeg
-                <i class="fa fa-ellipsis dots"></i>
+            <button onclick="deleteAllChats()">
+                🗑️ Tüm Sohbetleri Sil
             </button>
     </nav>
 
@@ -177,8 +175,10 @@
     <div id="message-form">
         <!-- Mesaj Gönderme Formu -->
         <form class="message-wrapper" id="chatForm">
-            <textarea id="message" name="prompt" rows="1" placeholder="Ekip oluşturma talebinizi yazın..." required></textarea>
-            <button class="send-button" type="submit">Gönder</button>
+            <textarea id="message" name="prompt" rows="1" placeholder="Talebinizi Yazın..." required></textarea>
+            <button class="send-button" type="submit">
+                <i class="fa-regular fa-paper-plane"></i>
+            </button>
         </form>
     </div>
 </main>
