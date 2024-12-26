@@ -6,22 +6,17 @@
     <title>MAPEG | DEMO</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
+        .parent-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f5f5f5;
         }
+
         .chat-container {
-            width: 90%;
+            width: 100vw;
             max-width: 800px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -131,22 +126,39 @@
 </head>
 <body>
 
-    <!-- Yan Menü - Yeni Sohbet Butonu -->
-    <div class="sidebar">
-        <button class="new-chat" onclick="startNewChat()">➕ Yeni Sohbet</button>
-        <h3>Geçmiş Sohbetler</h3>
-        <ul>
-            {% for chat in chat_list %}
+    <nav id="sidebar">
+        <div class="float-top">
+            
+            <!-- Yan Menü - Yeni Sohbet Butonu -->
+            <div class="sidebar-controls">
+                <button class="new-chat" onclick="startNewChat()">➕ Yeni Sohbet</button>
+                <button class="hide-sidebar"><i class="fa fa-chevron-left"></i></button>
+            </div>
+
+            <ul class="conversations">
+                <h3 class="grouping">Geçmiş Sohbetler</h3>
+                {% for chat in chat_list %}
+        <li class="active">
             <li>
-                <button onclick="loadChat('{{ chat }}')">{{ chat }}</button>
+                <button class="conversation-button" onclick="loadChat('{{ chat }}')">{{ chat }}</button>
             </li>
-            {% endfor %}
-        </ul>
+        </li>
+        {% endfor %}
+            </ul>
+        </div>
+        <div class="user-menu">
+            <button>
+                <i class="user-icon">M</i>
+                Mapeg
+                <i class="fa fa-ellipsis dots"></i>
+            </button>
+    </nav>
 
-        <button class="delete-all" onclick="deleteAllChats()">🗑️ Tüm Sohbetleri Sil</button>
-    </div>
+    
+<main>
 
-    <!-- Sohbet Kutusu -->
+    <div class="parent-container">
+        <!-- Sohbet Kutusu -->
     <div class="chat-container">
         <div class="chat-box" id="chatBox">
             {% if chat_history %}
@@ -159,15 +171,26 @@
                 <div class="message ai-message">Merhaba! Size nasıl yardımcı olabilirim?</div>
             {% endif %}
         </div>
-
+    </div>
+    </div>
+    
+    <div id="message-form">
         <!-- Mesaj Gönderme Formu -->
-        <form class="chat-input" id="chatForm">
-            <textarea name="prompt" rows="1" placeholder="Talebinizi yazın..." required></textarea>
-            <button type="submit">Gönder</button>
+        <form class="message-wrapper" id="chatForm">
+            <textarea id="message" name="prompt" rows="1" placeholder="Ekip oluşturma talebinizi yazın..." required></textarea>
+            <button class="send-button" type="submit">Gönder</button>
         </form>
     </div>
+</main>
 
 <script>
+        const sidebar = document.querySelector("#sidebar");
+        const hide_sidebar = document.querySelector(".hide-sidebar");
+
+        hide_sidebar.addEventListener( "click", function() {
+            sidebar.classList.toggle( "hidden" );
+        } );
+        
     const form = document.getElementById('chatForm');
     const chatBox = document.getElementById('chatBox');
     const textarea = form.querySelector('textarea');
