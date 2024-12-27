@@ -325,23 +325,44 @@ hide_sidebar.addEventListener( "click", function() {
         location.reload();
     }
 
-    // Geçmiş sohbetleri yükleme
-    async function loadChat(chatId) {
-        const response = await fetch(`/load_chat/${chatId}`);
-        const result = await response.json();
+async function loadChat(chatId) {
+    const response = await fetch(`/load_chat/${chatId}`);
+    const result = await response.json();
 
-        const chatBox = document.getElementById('chatBox');
-        chatBox.innerHTML = '';
+    const chatBox = document.getElementById('chatBox');
+    chatBox.innerHTML = '';
 
-        result.chat_history.forEach(message => {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'message ' + (message.role === 'user' ? 'user-message' : 'ai-message');
-            msgDiv.innerHTML = message.content;
-            chatBox.appendChild(msgDiv);
-        });
+    result.chat_history.forEach(message => {
+        // AI mesajı mı kontrol et
+        if (message.role === 'assistant') {
+            const parts = message.content.split("<br><br>");
+            const messageText = parts[0];  // İlk kısım metin
+            const tableMarkdown = parts.slice(1).join("<br><br>");  // Kalan kısım tablo (çoklu olabilir)
 
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
+            // Metin mesajı ekle
+            const aiText = document.createElement('div');
+            aiText.className = 'message ai-message';
+            aiText.innerHTML = messageText;
+            chatBox.appendChild(aiText);
+
+            // Markdown tablosunu HTML'e çevirip ekle
+            if (tableMarkdown) {
+                const table = markdownToHTML(tableMarkdown);
+                chatBox.appendChild(table);
+            }
+        } else {
+            // Kullanıcı mesajı ise doğrudan ekle
+            const msgContainer = document.createElement('div');
+            msgContainer.className = 'message user-message';
+            msgContainer.innerHTML = message.content;
+            chatBox.appendChild(msgContainer);
+        }
+    });
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+
 
     async function deleteAllChats() {
         const confirmed = confirm("Tüm sohbetleri silmek istediğinize emin misiniz?");
@@ -374,6 +395,7 @@ function markdownToHTML(md) {
         table.className = 'styled-table';
 
         let teamHeaderAdded = false;  // Takım başlığı eklendi mi kontrolü
+        let headerRowAdded = false;  // Tablo başlığı sadece bir kez eklenmeli
 
         lines.forEach((line, index) => {
             if (line.startsWith("# Takım Numarası:")) {
@@ -382,8 +404,8 @@ function markdownToHTML(md) {
                 container.appendChild(header);  // Takım başlığını ekle
                 teamHeaderAdded = true;
             } else if (line.includes("|")) {
-                const row = document.createElement(index === 1 ? 'thead' : 'tr');  // Başlık satırı mı kontrolü
-                const columns = line.split("|").slice(1, -1);  // İlk ve son boş sütunları almayız
+                const row = document.createElement('tr');
+                const columns = line.split("|").slice(1, -1);  // İlk ve son boş sütunları çıkar
 
                 columns.forEach((col, colIndex) => {
                     const cell = document.createElement(index === 1 ? 'th' : 'td');  // İlk satırsa th, diğerleri td
@@ -391,25 +413,27 @@ function markdownToHTML(md) {
                     row.appendChild(cell);
                 });
 
-                table.appendChild(row);
+                // Başlık satırını ekle
+                if (index === 1 && !headerRowAdded) {
+                    const thead = document.createElement('thead');
+                    thead.appendChild(row);
+                    table.appendChild(thead);
+                    headerRowAdded = true;
+                } else {
+                    table.appendChild(row);
+                }
             }
         });
 
-        // Tablolar arasına boşluk eklemek için <br>
+        // Tabloları ekleyelim
         if (teamHeaderAdded) {
             container.appendChild(table);
-            const space = document.createElement('br');
-            container.appendChild(space);
+            container.appendChild(document.createElement('br'));
         }
     });
 
     return container;
 }
-
-
-
-
-
 
 </script>
 

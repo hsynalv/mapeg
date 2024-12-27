@@ -844,7 +844,7 @@ def generate():
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": DUTY_MD},
-                    {"role": "user", "content": f"{json.dumps(teams, ensure_ascii=False)}"}
+                    {"role": "user", "content": contentforsecond}
                 ]
             )
 
