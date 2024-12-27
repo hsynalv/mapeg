@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
     <style>
         .parent-container {
             display: flex;
@@ -122,13 +123,44 @@
                 transform: translateY(-8px);
             }
         }
+
+.team-header {
+    font-weight: bold;
+    font-size: 18px;
+    margin: 15px 0 5px;
+    color: #007BFF;
+}
+
+.styled-table tr:nth-child(even) {
+    background-color: #2a2c30;  /* Hafif gri arka plan */
+    color: white;
+}
+
+.styled-table tr:nth-child(odd) {
+    background-color: #26272e;  /* Biraz daha koyu gri */
+}
+
+.styled-table th {
+    background-color: #007BFF;
+    color: white;
+    font-weight: bold;
+}
+
+.styled-table td {
+    color: white;  /* Yazı rengini koyulaştır */
+}
+
+.styled-table tr:hover {
+    background-color: #d1e7ff;  /* Hover efekti için farklı bir mavi tonu */
+}
+
     </style>
 </head>
 <body>
 
     <nav id="sidebar">
         <div class="float-top">
-            
+
             <!-- Yan Menü - Yeni Sohbet Butonu -->
             <div class="sidebar-controls">
                 <button class="new-chat" onclick="startNewChat()">➕ Yeni Sohbet</button>
@@ -140,19 +172,25 @@
                 {% for chat in chat_list %}
         <li class="active">
             <li>
-                <button class="conversation-button" onclick="loadChat('{{ chat }}')">{{ chat }}</button>
+                <button onclick="loadChat('{{ chat.id }}')">{{ chat.name }}</button>
             </li>
         </li>
         {% endfor %}
             </ul>
         </div>
-        <div class="user-menu">
-            <button onclick="deleteAllChats()">
+        <div class="user-menu" style="text-align: center; border-bottom: 1px solid #484a4e">
+            <button onclick="resetTeams()">
+                🔃 Takımları Sıfırla
+            </button>
+            <button onclick="deleteAllChats()" style="padding-top: 10px">
                 🗑️ Tüm Sohbetleri Sil
             </button>
+
+        </div>
+        <img src="../static/mapegassist.png" style="width: 150px; padding-top: 10px; padding-left: 15%">
     </nav>
 
-    
+
 <main>
 
     <div class="parent-container">
@@ -171,7 +209,7 @@
         </div>
     </div>
     </div>
-    
+
     <div id="message-form">
         <!-- Mesaj Gönderme Formu -->
         <form class="message-wrapper" id="chatForm">
@@ -184,13 +222,13 @@
 </main>
 
 <script>
-        const sidebar = document.querySelector("#sidebar");
-        const hide_sidebar = document.querySelector(".hide-sidebar");
+const sidebar = document.querySelector("#sidebar");
+const hide_sidebar = document.querySelector(".hide-sidebar");
 
-        hide_sidebar.addEventListener( "click", function() {
-            sidebar.classList.toggle( "hidden" );
-        } );
-        
+hide_sidebar.addEventListener( "click", function() {
+    sidebar.classList.toggle( "hidden" );
+} );
+
     const form = document.getElementById('chatForm');
     const chatBox = document.getElementById('chatBox');
     const textarea = form.querySelector('textarea');
@@ -211,63 +249,74 @@
 
     // Mesaj gönderme işlevi
     async function sendMessage() {
-        const formData = new FormData(form);
-        const userInput = formData.get('prompt').trim();
+    const formData = new FormData(form);
+    const userInput = formData.get('prompt').trim();
 
-        if (!userInput) {
-            alert("Lütfen bir mesaj girin.");
-            return;
-        }
-
-        // Kullanıcı mesajını ekle
-        const userMessage = document.createElement('div');
-        userMessage.className = 'message user-message';
-        userMessage.textContent = userInput;
-        chatBox.appendChild(userMessage);
-        form.reset();
-
-        // Yükleniyor animasyonu ekle
-        const loadingMessage = document.createElement('div');
-        loadingMessage.className = 'message ai-message loading';
-
-        const dotsContainer = document.createElement('div');
-        dotsContainer.className = 'loading-dots';
-        dotsContainer.innerHTML = `
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        `;
-        loadingMessage.appendChild(dotsContainer);
-        chatBox.appendChild(loadingMessage);
-
-        try {
-            // API'ye POST isteği gönder
-            const response = await fetch('/generate', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-
-            // Yükleniyor mesajını kaldır
-            chatBox.removeChild(loadingMessage);
-
-            // AI cevabını ekle
-            const aiMessage = document.createElement('div');
-            aiMessage.className = 'message ai-message';
-            aiMessage.innerText = result.response || "Beklenmedik bir hata oluştu.";
-            chatBox.appendChild(aiMessage);
-        } catch (error) {
-            chatBox.removeChild(loadingMessage);
-
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'message ai-message';
-            errorMessage.textContent = "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
-            chatBox.appendChild(errorMessage);
-        }
-
-        // Sohbet kutusunu en alta kaydır
-        chatBox.scrollTop = chatBox.scrollHeight;
+    if (!userInput) {
+        alert("Lütfen bir mesaj girin.");
+        return;
     }
+
+    // Kullanıcı mesajını ekle
+    const userMessage = document.createElement('div');
+    userMessage.className = 'message user-message';
+    userMessage.textContent = userInput;
+    chatBox.appendChild(userMessage);
+    form.reset();
+
+    // Yükleniyor animasyonu ekle
+    const loadingMessage = document.createElement('div');
+    loadingMessage.className = 'message ai-message loading';
+
+    const dotsContainer = document.createElement('div');
+    dotsContainer.className = 'loading-dots';
+    dotsContainer.innerHTML = `
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    `;
+    loadingMessage.appendChild(dotsContainer);
+    chatBox.appendChild(loadingMessage);
+
+    try {
+        // API'ye POST isteği gönder
+        const response = await fetch('/generate', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+
+        // Yükleniyor mesajını kaldır
+        chatBox.removeChild(loadingMessage);
+
+        // AI cevabını metin ve tablo olarak ayır ve ekle
+        const parts = result.response.split("<br><br>");
+        const messageText = parts[0];  // İlk kısım metin
+        const tableMarkdown = parts.slice(1).join("<br><br>");  // Kalan kısım tablo (çoklu olabilir)
+
+        // Metin mesajı ekle
+        const aiText = document.createElement('div');
+        aiText.className = 'message ai-message';
+        aiText.innerHTML = messageText;
+        chatBox.appendChild(aiText);
+
+        // Markdown tablosunu HTML'e çevirip ekle
+        if (tableMarkdown) {
+            const table = markdownToHTML(tableMarkdown);
+            chatBox.appendChild(table);
+        }
+    } catch (error) {
+        chatBox.removeChild(loadingMessage);
+
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'message ai-message';
+        errorMessage.textContent = "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+        chatBox.appendChild(errorMessage);
+    }
+
+    // Sohbet kutusunu en alta kaydır
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 
     // Yeni Sohbet Başlatma
     async function startNewChat() {
@@ -294,7 +343,6 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Tüm sohbetleri silme
     async function deleteAllChats() {
         const confirmed = confirm("Tüm sohbetleri silmek istediğinize emin misiniz?");
         if (confirmed) {
@@ -304,6 +352,73 @@
             location.reload();
         }
     }
+
+    async function resetTeams() {
+        const confirmed = confirm("Tüm takımları silmek istediğinize emin misiniz?");
+        if (confirmed) {
+            const response = await fetch('/resetTeams', { method: 'POST' });
+            const result = await response.json();
+            alert(result.message);
+            location.reload();
+        }
+    }
+
+    function markdownToHTML(md) {
+    const tables = md.trim().split("<br><br>");  // Her tabloyu ayır
+    const container = document.createElement('div');
+
+    tables.forEach((tableMarkdown, index) => {
+        const lines = tableMarkdown.trim().split("\n");
+        const table = document.createElement('table');
+        table.className = 'styled-table';
+
+        // Takım numarası satırını al
+        const teamInfoIndex = lines.findIndex(line => line.startsWith("# Takım Numarası:"));
+        let teamInfo = "";
+
+        // Takım bilgisi varsa ayıkla
+        if (teamInfoIndex !== -1) {
+            teamInfo = lines[teamInfoIndex];
+            lines.splice(teamInfoIndex, 1);  // Takım numarasını satırlardan çıkar
+        }
+
+        // Takım numarasını ekle
+        if (teamInfo) {
+            const teamHeader = document.createElement('div');
+            teamHeader.className = 'team-header';
+            teamHeader.textContent = teamInfo;
+            container.appendChild(teamHeader);
+        }
+
+        // Tablo başlığını ve içeriğini ekle
+        lines.forEach((line, index) => {
+            const row = document.createElement(index === 0 ? 'thead' : 'tr');
+            const columns = line.split("|").slice(1, -1); // İlk ve son boş sütunu atla
+
+            columns.forEach((col, colIndex) => {
+                const cell = document.createElement(index === 0 ? 'th' : 'td');
+                cell.textContent = col.trim();
+                row.appendChild(cell);
+            });
+
+            table.appendChild(row);
+        });
+
+        container.appendChild(table);
+
+        // Tabloların arasına boşluk ekle
+        if (index !== tables.length - 1) {
+            container.appendChild(document.createElement('br'));
+        }
+    });
+
+    return container;
+}
+
+
+
+
+
 </script>
 
 </body>
