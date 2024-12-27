@@ -42,8 +42,180 @@
                 }
             ],
             "end_date": "2024-12-27T13:51:36.379494"
+        },
+        {
+            "team_id": 2,
+            "target_city": "Adana",
+            "members": [
+                {
+                    "S\u0131ra No": 30,
+                    "Ad\u0131": "HAKAN",
+                    "Soyad\u0131": "G\u00dcRE\u015e",
+                    "G\u00f6revi": "Koordinat\u00f6r \nYMU",
+                    "Mesle\u011fi": "Maden",
+                    "Koordinat\u00f6rl\u00fck": "Metalik Madenler-1 ",
+                    "Daire Ba\u015fkanl\u0131\u011f\u0131": "METAL\u0130K MADENLER ",
+                    "Ara\u00e7 Kullan\u0131m\u0131": "Manuel",
+                    "Uzmanl\u0131k Alan\u0131": "M",
+                    "Enlem": 40.8533,
+                    "Boylam": 29.8815,
+                    "Se\u00e7ilen Say\u0131lar": "[207, 226, 208, 204]"
+                },
+                {
+                    "S\u0131ra No": 71,
+                    "Ad\u0131": "YAS\u0130N",
+                    "Soyad\u0131": "YILDIRIM",
+                    "G\u00f6revi": "YMU",
+                    "Mesle\u011fi": "Jeoloji",
+                    "Koordinat\u00f6rl\u00fck": "Agrega Projeleri ",
+                    "Daire Ba\u015fkanl\u0131\u011f\u0131": "AGREGA ",
+                    "Ara\u00e7 Kullan\u0131m\u0131": "Manuel",
+                    "Uzmanl\u0131k Alan\u0131": "M",
+                    "Enlem": 39.9208,
+                    "Boylam": 32.8541,
+                    "Se\u00e7ilen Say\u0131lar": "[225]"
+                },
+                {
+                    "ID": 123,
+                    "UNVAN": "Mali Uzman Y.",
+                    "AD SOYAD": "Y\u00dcCEL ACAR",
+                    "ARA\u00c7 KULLANAB\u0130L\u0130R": "E",
+                    "Enlem": 39.7767,
+                    "Boylam": 30.5206
+                }
+            ],
+            "end_date": "2024-12-27T17:05:18.908185"
+        },
+        {
+            "team_id": 3,
+            "target_city": "Adana",
+            "members": [
+                {
+                    "S\u0131ra No": 44,
+                    "Ad\u0131": "MURAT",
+                    "Soyad\u0131": "D\u00d6NGEL",
+                    "G\u00f6revi": "YMU",
+                    "Mesle\u011fi": "Maden",
+                    "Koordinat\u00f6rl\u00fck": "Hammadde \u00dcretim \u0130zinleri ",
+                    "Daire Ba\u015fkanl\u0131\u011f\u0131": "HAMMADDE \u00dcRET\u0130M \u0130Z\u0130NLER\u0130 ",
+                    "Ara\u00e7 Kullan\u0131m\u0131": "Manuel",
+                    "Uzmanl\u0131k Alan\u0131": "K",
+                    "Enlem": 37.1674,
+                    "Boylam": 38.7939,
+                    "Se\u00e7ilen Say\u0131lar": "[220]"
+                },
+                {
+                    "S\u0131ra No": 12,
+                    "Ad\u0131": "BURHAN",
+                    "Soyad\u0131": "ARSLAN",
+                    "G\u00f6revi": "YMU",
+                    "Mesle\u011fi": "Jeoloji",
+                    "Koordinat\u00f6rl\u00fck": "Hammadde \u00dcretim \u0130zinleri ",
+                    "Daire Ba\u015fkanl\u0131\u011f\u0131": "HAMMADDE \u00dcRET\u0130M \u0130Z\u0130NLER\u0130 ",
+                    "Ara\u00e7 Kullan\u0131m\u0131": "Manuel",
+                    "Uzmanl\u0131k Alan\u0131": "M",
+                    "Enlem": 38.3552,
+                    "Boylam": 38.3095,
+                    "Se\u00e7ilen Say\u0131lar": "[202, 221]"
+                },
+                {
+                    "ID": 115,
+                    "UNVAN": "Mali Uzman Y.",
+                    "AD SOYAD": "MEHMET B\u0130L\u0130K",
+                    "ARA\u00c7 KULLANAB\u0130L\u0130R": "E",
+                    "Enlem": 41.2867,
+                    "Boylam": 36.33
+                }
+            ],
+            "end_date": "2024-12-27T17:05:18.922274"
+        },
+        {
+            "team_id": 4,
+            "target_city": "Adana",
+            "members": [
+                {
+                    "S\u0131ra No": 47,
+                    "Ad\u0131": "MUSTAFA",
+                    "Soyad\u0131": "Y\u00dcCE",
+                    "G\u00f6revi": "YMU",
+                    "Mesle\u011fi": "Maden",
+                    "Koordinat\u00f6rl\u00fck": "Hammadde \u00dcretim \u0130zinleri ",
+                    "Daire Ba\u015fkanl\u0131\u011f\u0131": "HAMMADDE \u00dcRET\u0130M \u0130Z\u0130NLER\u0130 ",
+                    "Ara\u00e7 Kullan\u0131m\u0131": "Manuel",
+                    "Uzmanl\u0131k Alan\u0131": "M",
+                    "Enlem": 37.1674,
+                    "Boylam": 38.7939,
+                    "Se\u00e7ilen Say\u0131lar": "[222, 206, 226, 208, 224]"
+                },
+                {
+                    "S\u0131ra No": 39,
+                    "Ad\u0131": "MEHMET",
+                    "Soyad\u0131": "KANBUR",
+                    "G\u00f6revi": "YMU",
+                    "Mesle\u011fi": "Jeoloji",
+                    "Koordinat\u00f6rl\u00fck": "Metalik Madenler-2 ",
+                    "Daire Ba\u015fkanl\u0131\u011f\u0131": "METAL\u0130K MADENLER ",
+                    "Ara\u00e7 Kullan\u0131m\u0131": "Otomatik",
+                    "Uzmanl\u0131k Alan\u0131": "M",
+                    "Enlem": 37.0662,
+                    "Boylam": 37.3833,
+                    "Se\u00e7ilen Say\u0131lar": "[229]"
+                },
+                {
+                    "ID": 106,
+                    "UNVAN": "Mali Uzman Y.",
+                    "AD SOYAD": "EBRU DEM\u0130REL",
+                    "ARA\u00c7 KULLANAB\u0130L\u0130R": "H",
+                    "Enlem": 41.0053,
+                    "Boylam": 39.7262
+                }
+            ],
+            "end_date": "2024-12-27T17:07:10.563338"
+        },
+        {
+            "team_id": 5,
+            "target_city": "Mersin",
+            "members": [
+                {
+                    "S\u0131ra No": 72,
+                    "Ad\u0131": "YUSUF",
+                    "Soyad\u0131": "ZORER",
+                    "G\u00f6revi": "YMU",
+                    "Mesle\u011fi": "Maden",
+                    "Koordinat\u00f6rl\u00fck": "Halkla \u0130li\u015fkiler ",
+                    "Daire Ba\u015fkanl\u0131\u011f\u0131": "BASIN VE HALKLA \u0130L\u0130\u015eK\u0130LER M\u00dc\u015eAV\u0130RL\u0130\u011e\u0130",
+                    "Ara\u00e7 Kullan\u0131m\u0131": "Manuel",
+                    "Uzmanl\u0131k Alan\u0131": "K",
+                    "Enlem": NaN,
+                    "Boylam": NaN,
+                    "Se\u00e7ilen Say\u0131lar": NaN
+                },
+                {
+                    "S\u0131ra No": 9,
+                    "Ad\u0131": "BARI\u015e",
+                    "Soyad\u0131": "KURBAN",
+                    "G\u00f6revi": "YMU",
+                    "Mesle\u011fi": "Jeoloji",
+                    "Koordinat\u00f6rl\u00fck": "Agrega Projeleri ",
+                    "Daire Ba\u015fkanl\u0131\u011f\u0131": "AGREGA ",
+                    "Ara\u00e7 Kullan\u0131m\u0131": "Manuel",
+                    "Uzmanl\u0131k Alan\u0131": "K",
+                    "Enlem": 37.1674,
+                    "Boylam": 38.7939,
+                    "Se\u00e7ilen Say\u0131lar": "[222]"
+                },
+                {
+                    "ID": 119,
+                    "UNVAN": "Mali Uzman Y.",
+                    "AD SOYAD": "SEM\u0130H \u015eENYURT",
+                    "ARA\u00c7 KULLANAB\u0130L\u0130R": "H",
+                    "Enlem": 40.8533,
+                    "Boylam": 29.8815
+                }
+            ],
+            "end_date": "2024-12-27T17:07:10.570946"
         }
     ],
-    "total_teams": 1,
+    "total_teams": 5,
     "date_created": "2024-12-27T13:39:53.220618"
 }

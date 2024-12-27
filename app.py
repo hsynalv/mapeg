@@ -666,43 +666,6 @@ Output Markdown:
 **Yanıtınızda ek bir metin içermeyin. Sadece Markdown içeriğini döndürün.**
 """
 
-# Excel dosyalarının yolları
-mali_uzmanlar_path = 'mali uzman ve harita mühendisi diğer.xlsx'
-maden_uzmanlari_path = 'MEVCUT YERALTI MADEN UZMANLARI VE GÖREVLERİ düzenli fp.xlsx'
-
-# Excel dosyalarını oku
-mali_uzmanlar_df = pd.read_excel(mali_uzmanlar_path)
-maden_uzmanlari_df = pd.read_excel(maden_uzmanlari_path)
-
-# Mühendisleri filtrele
-maden_uzmanlari_df['Mesleği'] = maden_uzmanlari_df['Mesleği'].str.strip()
-maden_uzmanlari_df.columns = maden_uzmanlari_df.columns.str.strip()
-
-maden_muhendisleri = maden_uzmanlari_df[maden_uzmanlari_df['Mesleği'] == 'Maden']
-jeoloji_muhendisleri = maden_uzmanlari_df[maden_uzmanlari_df['Mesleği'] == 'Jeoloji']
-
-mali_uzmanlari = mali_uzmanlar_df[mali_uzmanlar_df['UNVAN'] == 'Mali Uzman Y.']
-harita_muhendisleri = mali_uzmanlar_df[mali_uzmanlar_df['UNVAN'] == 'Harita Mühendisi']
-
-# Ekip oluşturma değişkenleri
-created_teams = []
-team_history = {}
-pairing_history = {}
-selected_members = set()
-team_id_counter = 1
-WAITING_PERIOD = timedelta(days=1)
-
-# Türkiye'nin 81 ili
-target_cities = [
-    "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin",
-    "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur",
-    "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan",
-    "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkâri", "Hatay", "Iğdır", "Isparta", "İstanbul",
-    "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli",
-    "Kırşehir", "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş",
-    "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas",
-    "Şanlıurfa", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
-]
 
 CHAT_HISTORY_DIR = 'chat_history'
 CHAT_LIST_FILE = os.path.join(CHAT_HISTORY_DIR, 'chat_list.json')
@@ -739,61 +702,6 @@ def save_chat_to_list(user_id, chat_id):
     user_chat_list_file = os.path.join(CHAT_HISTORY_DIR, f'chat_list_{user_id}.json')
     with open(user_chat_list_file, 'w', encoding='utf-8') as f:
         json.dump(chat_list, f, ensure_ascii=False, indent=4)
-
-def create_team(team_id):
-    global team_history, pairing_history, selected_members
-
-    available_maden = maden_muhendisleri[~maden_muhendisleri['Sıra No'].isin(selected_members)]
-    available_jeoloji = jeoloji_muhendisleri[~jeoloji_muhendisleri['Sıra No'].isin(selected_members)]
-    available_mali = mali_uzmanlari[~mali_uzmanlari['ID'].isin(selected_members)]
-
-    if available_maden.empty or available_jeoloji.empty or available_mali.empty:
-        return None
-
-    maden_muh = available_maden.sample(1).iloc[0]
-    jeoloji_muh = available_jeoloji.sample(1).iloc[0]
-    mali_uzman = available_mali.sample(1).iloc[0]
-
-    team_members = [maden_muh['Sıra No'], jeoloji_muh['Sıra No'], mali_uzman['ID']]
-    now = datetime.now()
-
-    for member in team_members:
-        if member not in team_history:
-            team_history[member] = []
-        team_history[member].append(now)
-
-    selected_members.update(team_members)
-
-    team = {
-        "team_id": team_id,
-        "target_city": random.choice(target_cities),
-        "members": [
-            {"role": "Maden Mühendisi", "name": f"{maden_muh['Adı']} {maden_muh['Soyadı']}"},
-            {"role": "Jeoloji Mühendisi", "name": f"{jeoloji_muh['Adı']} {jeoloji_muh['Soyadı']}"},
-            {"role": mali_uzman['UNVAN'], "name": mali_uzman['AD SOYAD']}
-        ]
-    }
-    return team
-
-def generate_teams(num_teams):
-    global team_id_counter
-    teams = []
-
-    for _ in range(num_teams):
-        team = create_team(team_id_counter)
-        if team:
-            teams.append(team)
-            team_id_counter += 1
-        else:
-            break
-
-    result = {
-        "teams": teams,
-        "total_teams": len(teams),
-        "date_created": datetime.now().strftime("%Y-%m-%d")
-    }
-
-    return result
 
 @app.route('/', methods=['GET'])
 def index():

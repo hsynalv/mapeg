@@ -363,57 +363,49 @@ hide_sidebar.addEventListener( "click", function() {
         }
     }
 
-    function markdownToHTML(md) {
-    const tables = md.trim().split("<br><br>");  // Her tabloyu ayır
-    const container = document.createElement('div');
+   // API yanıtını alıp tabloya çevirme
+function markdownToHTML(md) {
+    const parts = md.split(/\n(?=# Takım Numarası)/g);  // Her Takım Numarası başlığından ayır
+    const container = document.createElement('div');  // Tüm içerikleri barındıracak kapsayıcı
 
-    tables.forEach((tableMarkdown, index) => {
-        const lines = tableMarkdown.trim().split("\n");
+    parts.forEach(part => {
+        const lines = part.trim().split("\n");
         const table = document.createElement('table');
         table.className = 'styled-table';
 
-        // Takım numarası satırını al
-        const teamInfoIndex = lines.findIndex(line => line.startsWith("# Takım Numarası:"));
-        let teamInfo = "";
+        let teamHeaderAdded = false;  // Takım başlığı eklendi mi kontrolü
 
-        // Takım bilgisi varsa ayıkla
-        if (teamInfoIndex !== -1) {
-            teamInfo = lines[teamInfoIndex];
-            lines.splice(teamInfoIndex, 1);  // Takım numarasını satırlardan çıkar
-        }
-
-        // Takım numarasını ekle
-        if (teamInfo) {
-            const teamHeader = document.createElement('div');
-            teamHeader.className = 'team-header';
-            teamHeader.textContent = teamInfo;
-            container.appendChild(teamHeader);
-        }
-
-        // Tablo başlığını ve içeriğini ekle
         lines.forEach((line, index) => {
-            const row = document.createElement(index === 0 ? 'thead' : 'tr');
-            const columns = line.split("|").slice(1, -1); // İlk ve son boş sütunu atla
+            if (line.startsWith("# Takım Numarası:")) {
+                const header = document.createElement('h3');
+                header.innerHTML = line.replace("# ", "");  // H3 başlığı olarak ekle
+                container.appendChild(header);  // Takım başlığını ekle
+                teamHeaderAdded = true;
+            } else if (line.includes("|")) {
+                const row = document.createElement(index === 1 ? 'thead' : 'tr');  // Başlık satırı mı kontrolü
+                const columns = line.split("|").slice(1, -1);  // İlk ve son boş sütunları almayız
 
-            columns.forEach((col, colIndex) => {
-                const cell = document.createElement(index === 0 ? 'th' : 'td');
-                cell.textContent = col.trim();
-                row.appendChild(cell);
-            });
+                columns.forEach((col, colIndex) => {
+                    const cell = document.createElement(index === 1 ? 'th' : 'td');  // İlk satırsa th, diğerleri td
+                    cell.textContent = col.trim();
+                    row.appendChild(cell);
+                });
 
-            table.appendChild(row);
+                table.appendChild(row);
+            }
         });
 
-        container.appendChild(table);
-
-        // Tabloların arasına boşluk ekle
-        if (index !== tables.length - 1) {
-            container.appendChild(document.createElement('br'));
+        // Tablolar arasına boşluk eklemek için <br>
+        if (teamHeaderAdded) {
+            container.appendChild(table);
+            const space = document.createElement('br');
+            container.appendChild(space);
         }
     });
 
     return container;
 }
+
 
 
 
