@@ -666,7 +666,6 @@ Output Markdown:
 **Yanıtınızda ek bir metin içermeyin. Sadece Markdown içeriğini döndürün.**
 """
 
-
 CHAT_HISTORY_DIR = 'chat_history'
 CHAT_LIST_FILE = os.path.join(CHAT_HISTORY_DIR, 'chat_list.json')
 
@@ -682,6 +681,7 @@ def load_chat_list(user_id):
             return json.load(f)
     return []
 
+
 def load_chat_history(user_id, chat_id):
     chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{user_id}_{chat_id}.json')
     if os.path.exists(chat_file):
@@ -689,10 +689,12 @@ def load_chat_history(user_id, chat_id):
             return json.load(f)
     return {"messages": []}
 
+
 def save_chat_history(user_id, chat_id, chat_data):
     chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{user_id}_{chat_id}.json')
     with open(chat_file, 'w', encoding='utf-8') as f:
         json.dump(chat_data, f, ensure_ascii=False, indent=4)
+
 
 def save_chat_to_list(user_id, chat_id):
     chat_list = load_chat_list(user_id)
@@ -702,6 +704,7 @@ def save_chat_to_list(user_id, chat_id):
     user_chat_list_file = os.path.join(CHAT_HISTORY_DIR, f'chat_list_{user_id}.json')
     with open(user_chat_list_file, 'w', encoding='utf-8') as f:
         json.dump(chat_list, f, ensure_ascii=False, indent=4)
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -740,15 +743,17 @@ def new_chat():
     response.set_cookie('user_id', user_id, max_age=90 * 24 * 60 * 60)
     return response
 
+
 @app.route('/load_chat/<chat_id>', methods=['GET'])
 def load_chat(chat_id):
     user_id = request.cookies.get('user_id')
     chat_data = load_chat_history(user_id, chat_id)
 
     response = make_response(jsonify({"chat_history": chat_data['messages']}))
-    response.set_cookie("chat_id",chat_id)
+    response.set_cookie("chat_id", chat_id)
 
     return response
+
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -758,7 +763,6 @@ def generate():
 
     if not user_id:
         user_id = str(uuid.uuid4())
-        save_chat_to_list(user_id, chat_id)
 
     # Sohbet listesine eklenip eklenmediğini kontrol et
     save_chat_to_list(user_id, chat_id)  # Eğer listede yoksa ekler
@@ -771,13 +775,13 @@ def generate():
 
     try:
         response = openai.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": DUTY},
                 {"role": "user", "content": content}
             ],
             response_format={
-                "type" : "json_object"
+                "type": "json_object"
             },
             temperature=0.7,
             max_completion_tokens=2000,
@@ -795,19 +799,22 @@ def generate():
         print(is_editable)
         print(is_assign)
 
-        if (is_creation) and ((first_query["Creation_Details"]["Amount_of_Teams"] != "") and (
+        if is_creation and ((first_query["Creation_Details"]["Amount_of_Teams"] != "") and (
                 len(first_query["Creation_Details"]["cities_to_assign"]) > 0)):
             teams = []
             assistant = MAPEGTeamAssignment()
 
+            a = 1
+
             for city in first_query["Creation_Details"]["cities_to_assign"]:
+                print(f"{a}. takım oluşturuldu")
+                a+=1
                 team = assistant.create_team(target_city=city, end_date=datetime.now())
                 if team:  # Only append if team creation was successful
                     teams.append(team)
                 else:
                     print(f"Failed to create team for city: {city}")
-
-            print(team)
+                    final_output = f"Failed to create team for city: {city}"
 
             formatted_result = openai.chat.completions.create(
                 model="gpt-4o-mini",
@@ -816,20 +823,18 @@ def generate():
                     {"role": "user", "content": f"{json.dumps(teams, ensure_ascii=False)}"}
                 ]
             )
-            final_output = formatted_result.choices[0].message.content
 
-            final_output = first_query["Response"] + "<br><br>" + final_output
-
+            final_output = first_query["Response"] + "<br><br>" + formatted_result.choices[0].message.content
             chat_data['messages'].append({"role": "assistant", "content": final_output})
             save_chat_history(user_id, chat_id, chat_data)
             print(final_output)
 
-            #print(team)
 
-        elif (is_editable) and ((first_query["Edit_Details"][0]["team_id"] > 0) and (len(first_query["Edit_Details"][0]["member_id"]) > 0)):
+        elif is_editable and ((first_query["Edit_Details"][0]["team_id"] > 0) and (
+                len(first_query["Edit_Details"][0]["member_id"]) > 0)):
             print("is editable")
 
-            teams=[]
+            teams = []
             assistant = MAPEGTeamAssignment()
 
             team_id = first_query["Edit_Details"][0]["team_id"]
@@ -848,8 +853,7 @@ def generate():
                 ]
             )
 
-            final_output = formatted_result.choices[0].message.content
-            final_output = first_query["Response"] + "<br><br>" + final_output
+            final_output = first_query["Response"] + "<br><br>" + formatted_result.choices[0].message.content
             chat_data['messages'].append({"role": "assistant", "content": final_output})
             save_chat_history(user_id, chat_id, chat_data)
 
@@ -866,10 +870,11 @@ def generate():
             save_chat_history(user_id, chat_id, chat_data)
             return jsonify({"response": first_query["Response"]})
     except Exception as e:
-        final_output = "Bir hata ile karşılaşıldı, lütfen tekrar deneyiniz. "
+        final_output = "Bir hatayla karşılaşıldı. Lütfen tekrar deneyiniz..."
         print(e)
 
     return jsonify({"response": final_output})
+
 
 @app.route('/delete_all_chats', methods=['POST'])
 def delete_all_chats():
@@ -883,12 +888,12 @@ def delete_all_chats():
     except Exception as e:
         return jsonify({"message": f"Hata: {str(e)}"}), 500
 
+
 @app.route('/resetTeams', methods=['POST'])
 def resetTeams():
     assistant = MAPEGTeamAssignment()
     assistant.reset_created_teams()
     return jsonify({"message": "Tüm takımlar başarıyla sıfırlandı"})
-
 
 
 if __name__ == '__main__':
