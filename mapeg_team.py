@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import numpy as np
 import json
@@ -5,11 +7,11 @@ import random
 from datetime import datetime, timedelta
 from enum import Enum
 
+
 class history_options(Enum):
     MEMBER_HISTORY = 1
     PAIRING_HISTORY = 2
     TEAM_ID_COUNTER = 3
-
 
 
 class MAPEGTeamAssignment:
@@ -36,7 +38,8 @@ class MAPEGTeamAssignment:
         'maden_teknikeri': mali_uzmanlar_df[mali_uzmanlar_df['UNVAN'] == 'Maden Teknikeri'],
         'jeofizik_muhendisleri': mali_uzmanlar_df[mali_uzmanlar_df['UNVAN'] == 'Jeofizik Mühendisi'],
         'makina_muhendisleri': mali_uzmanlar_df[mali_uzmanlar_df['UNVAN'] == 'Makina Mühendisi'],
-        'elektrik_elektronik_muhendisleri': mali_uzmanlar_df[mali_uzmanlar_df['UNVAN'] == 'Elektrik Elektronik Mühendisi'],
+        'elektrik_elektronik_muhendisleri': mali_uzmanlar_df[
+            mali_uzmanlar_df['UNVAN'] == 'Elektrik Elektronik Mühendisi'],
         'makina_teknikeri': mali_uzmanlar_df[mali_uzmanlar_df['UNVAN'] == 'Makina Teknikeri']
     }
 
@@ -64,28 +67,29 @@ class MAPEGTeamAssignment:
         try:
             with open(cls.history_file, 'r', encoding='utf-8') as file:
                 data = json.load(file)
-                match option:
-                    case history_options.MEMBER_HISTORY:
-                        if kwargs is None:
-                            return data.get("member_history", {})
-                        elif "member_id" in kwargs.keys():
-                            member_id = kwargs["member_id"]
-                            if str(member_id) in data["member_history"].keys():
-                                return data["member_history"][str(member_id)]
-                            else:
-                                raise ValueError(f"MAPEGTeamAssignment.load_team_history(): There is not a member having ID = {member_id}")
-                    case history_options.PAIRING_HISTORY:
-                        return data.get("pairing_history", {})
-                    case history_options.TEAM_ID_COUNTER:
-                        return data.get("team_id_counter", 1)
-                    case None:
-                        return data.get("member_history", {}), data.get("pairing_history", {}), data.get("team_id_counter", 1)
-                    case _:
-                        raise TypeError(f"MAPEGTeamAssignment.load_team_history(): Invalid history option '{option}'")
+
+                if option == history_options.MEMBER_HISTORY:
+                    if kwargs is None:
+                        return data.get("member_history", {})
+                    elif "member_id" in kwargs.keys():
+                        member_id = kwargs["member_id"]
+                        if str(member_id) in data["member_history"].keys():
+                            return data["member_history"][str(member_id)]
+                        else:
+                            raise ValueError(
+                                f"MAPEGTeamAssignment.load_team_history(): There is not a member having ID = {member_id}")
+                elif option == history_options.PAIRING_HISTORY:
+                    return data.get("pairing_history", {})
+                elif option == history_options.TEAM_ID_COUNTER:
+                    return data.get("team_id_counter", 1)
+                elif option == None:
+                    return data.get("member_history", {}), data.get("pairing_history", {}), data.get("team_id_counter",
+                                                                                                     1)
+                else:
+                    raise TypeError(f"MAPEGTeamAssignment.load_team_history(): Invalid history option '{option}'")
 
         except (FileNotFoundError, json.JSONDecodeError):
             return {}, {}, 0
-
 
     @classmethod
     def select_member(cls, key: str, car_usage: bool) -> dict:
@@ -102,7 +106,6 @@ class MAPEGTeamAssignment:
                     member_dict[k] = float(v)
             remaining_members.append(member_dict)
 
-
         for _ in range(len(list(cls.members[key][member_key]))):
             # Shuffle the members
             random.shuffle(remaining_members)
@@ -117,34 +120,34 @@ class MAPEGTeamAssignment:
             )
 
             if (
-                member_history['when_available'] is None or
-                (
+                    member_history['when_available'] is None or
                     (
-                        datetime.now() -
-                        datetime.strptime(
-                            member_history['when_available'],
-                            "%Y-%m-%dT%H:%M:%S.%f"
-                        )
-                    ).total_seconds() > 0
-                )
-            ) and (
-                not car_usage or
-                car_usage and (
-                    (
-                        key == "mali_uzmanlari" and
-                        (
-                            member['ARAÇ KULLANABİLİR'] == "Evet" or
-                            member['ARAÇ KULLANABİLİR'] == "E"
-                        )
-                    ) or
-                    (
-                        key != "mali_uzmanlari" and
-                        (
-                            member['Araç Kullanımı'] == "Manuel" or
-                            member['Araç Kullanımı'] == "Otomatik"
-                        )
+                            (
+                                    datetime.now() -
+                                    datetime.strptime(
+                                        member_history['when_available'],
+                                        "%Y-%m-%dT%H:%M:%S.%f"
+                                    )
+                            ).total_seconds() > 0
                     )
-                )
+            ) and (
+                    not car_usage or
+                    car_usage and (
+                            (
+                                    key == "mali_uzmanlari" and
+                                    (
+                                            member['ARAÇ KULLANABİLİR'] == "Evet" or
+                                            member['ARAÇ KULLANABİLİR'] == "E"
+                                    )
+                            ) or
+                            (
+                                    key != "mali_uzmanlari" and
+                                    (
+                                            member['Araç Kullanımı'] == "Manuel" or
+                                            member['Araç Kullanımı'] == "Otomatik"
+                                    )
+                            )
+                    )
             ):
                 break
 
@@ -152,41 +155,16 @@ class MAPEGTeamAssignment:
 
         return member
 
-
-    """
-    @classmethod
-    def add_new_team_to_created_teams(cls, team: dict):
-        try:
-            # Load existing data
-            with open(cls.created_teams_file, 'r', encoding='utf-8') as file:
-                data = json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError):
-            # If file doesn't exist or is malformed, start with a fresh structure
-            data = {}
-
-        # Make sure 'teams' is a list in our data
-        if 'teams' not in data or not isinstance(data['teams'], list):
-            print("asdasdadasdasdasdasda")
-            data['teams'] = []
-
-        # Append the new team dictionary
-        data['teams'].append(team)
-
-        # Write updated data back to the file
-        with open(cls.created_teams_file, 'w', encoding='utf-8') as file:
-            json.dump(data, file, indent=4)
-    
-    """
-
-
     @classmethod
     def add_new_team_to_created_teams(cls, team: dict):
         try:
             with open(cls.created_teams_file, 'r', encoding='utf-8') as file:
                 data = json.load(file)
 
-            data['teams'].append(team)
-            data['total_teams'] = len(data['teams'])  # total_teams'i güncelle
+                print(data)
+                # {'teams': [], 'total_teams': 0, 'date_created': '2024-12-25T01:11:05.465115'}
+                data['teams'].append(team)
+                data['total_teams'] = len(data['teams'])  # total_teams'i güncelle
 
             with open(cls.created_teams_file, 'w', encoding='utf-8') as file:
                 json.dump(data, file, indent=4)
@@ -196,7 +174,6 @@ class MAPEGTeamAssignment:
 
     @classmethod
     def create_team(cls, target_city: str = None, end_date: datetime = None) -> dict:
-        print("deneme")
         try:
             members = []
 
@@ -247,7 +224,7 @@ class MAPEGTeamAssignment:
     @classmethod
     def update_created_teams(cls, team_id: int, member_id: int):
         try:
-            with open(cls.created_teams_file, 'r+', encoding='utf-8') as file:
+            with open(cls.created_teams_file, 'r', encoding='utf-8') as file:
                 data = json.load(file)
 
                 for i in range(data['total_teams']):
@@ -256,10 +233,18 @@ class MAPEGTeamAssignment:
                         break
 
                 for j in range(len(data['teams'][team_idx]['members'])):
-                    if data['teams'][team_idx]['members'][j]['ID'] == member_id:
+                    if (
+                            (
+                                    "ID" in data['teams'][team_idx]['members'][j] and
+                                    data['teams'][team_idx]['members'][j]['ID'] == member_id
+                            ) or
+                            (
+                                    "Sıra No" in data['teams'][team_idx]['members'][j] and
+                                    data['teams'][team_idx]['members'][j]['Sıra No'] == member_id
+                            )
+                    ):
                         member_idx = j
                         break
-
 
                 members_car_usage = []
                 for i in range(3):
@@ -295,11 +280,39 @@ class MAPEGTeamAssignment:
                 else:
                     raise ValueError
 
+                updated_team = data['teams'][team_idx]
+
+            with open(cls.created_teams_file, 'w', encoding='utf-8') as file:
                 json.dump(data, file, indent=4)
+
+            return updated_team
 
         except (FileNotFoundError, json.JSONDecodeError):
             return {}, {}, 0
 
+    @classmethod
+    def reset_created_teams(cls):
+        try:
+            # Remove the file
+            os.remove(cls.created_teams_file)
+            print(f"{cls.created_teams_file} has been deleted.")
+        except FileNotFoundError:
+            print("The file does not exist.")
+        except PermissionError:
+            print("You do not have permission to delete this file.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        with open(cls.created_teams_file, 'w', encoding='utf-8') as file:
+            json.dump(
+                {
+                    "teams": [],
+                    "total_teams": 0,
+                    "date_created": datetime.now().isoformat()
+                },
+                file,
+                indent=4
+            )
 
     @classmethod
     def assign_teams(cls):
@@ -335,7 +348,8 @@ class MAPEGTeamAssignment:
                         for j in range(3):
                             if j != i:
                                 print(member.keys())
-                                if str(team['members'][j]) in history[str(member['Sıra No'])]["team_partner_stats"].keys():
+                                if str(team['members'][j]) in history[str(member['Sıra No'])][
+                                    "team_partner_stats"].keys():
                                     history[str(member['Sıra No'])]["team_partner_stats"][str(team['members'][j])] += 1
                                 else:
                                     history[str(member['Sıra No'])]["team_partner_stats"][str(team['members'][j])] = 1

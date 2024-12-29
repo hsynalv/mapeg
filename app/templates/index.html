@@ -7,128 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <style>
-        .parent-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .chat-container {
-            width: 100vw;
-            max-width: 800px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 80vh;
-        }
-        .chat-box {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-        .chat-input {
-            display: flex;
-            border-top: 1px solid #ddd;
-        }
-        .chat-input textarea {
-            flex: 1;
-            border: none;
-            padding: 15px;
-            font-size: 16px;
-            resize: none;
-        }
-        .chat-input button {
-            padding: 15px 20px;
-            border: none;
-            background-color: #007BFF;
-            color: white;
-            cursor: pointer;
-        }
-        .message {
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 70%;
-        }
-        .user-message {
-            background-color: #515151;
-            color: white;
-            margin-left: auto;
-        }
-        .ai-message {
-            background-color: #717171;
-            color: white;
-            margin-right: auto;
-        }
-        .loading {
-            color: #666;
-            font-style: italic;
-        }
-        .sidebar {
-            position: absolute;
-            left: 20px;
-            top: 20px;
-        }
-        .sidebar button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        .delete-all {
-            margin-top: auto;  /* Butonu en alta iter */
-            background-color: red;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        .loading-dots {
-                display: inline-flex;
-                justify-content: center;
-                align-items: center;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
-            margin: 0 3px;
-            background-color: #cae2ff;
-            border-radius: 50%;
-            animation: bounce 1.5s infinite ease-in-out;
-        }
-
-        .dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes bounce {
-            0%, 80%, 100% {
-                transform: scale(1);
-            }
-            40% {
-                transform: translateY(-8px);
-            }
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 </head>
 <body>
 
     <nav id="sidebar">
         <div class="float-top">
-            
+
             <!-- Yan Menü - Yeni Sohbet Butonu -->
             <div class="sidebar-controls">
                 <button class="new-chat" onclick="startNewChat()">➕ Yeni Sohbet</button>
@@ -140,19 +25,25 @@
                 {% for chat in chat_list %}
         <li class="active">
             <li>
-                <button class="conversation-button" onclick="loadChat('{{ chat }}')">{{ chat }}</button>
+                <button onclick="loadChat('{{ chat.id }}')">{{ chat.name }}</button>
             </li>
         </li>
         {% endfor %}
             </ul>
         </div>
-        <div class="user-menu">
-            <button onclick="deleteAllChats()">
+        <div class="user-menu" style="text-align: center; border-bottom: 1px solid #484a4e">
+            <button onclick="resetTeams()">
+                🔃 Takımları Sıfırla
+            </button>
+            <button onclick="deleteAllChats()" style="padding-top: 10px">
                 🗑️ Tüm Sohbetleri Sil
             </button>
+
+        </div>
+        <img src="../static/mapegassist.png" style="width: 150px; padding-top: 10px; padding-left: 15%">
     </nav>
 
-    
+
 <main>
 
     <div class="parent-container">
@@ -171,7 +62,7 @@
         </div>
     </div>
     </div>
-    
+
     <div id="message-form">
         <!-- Mesaj Gönderme Formu -->
         <form class="message-wrapper" id="chatForm">
@@ -183,128 +74,6 @@
     </div>
 </main>
 
-<script>
-        const sidebar = document.querySelector("#sidebar");
-        const hide_sidebar = document.querySelector(".hide-sidebar");
-
-        hide_sidebar.addEventListener( "click", function() {
-            sidebar.classList.toggle( "hidden" );
-        } );
-        
-    const form = document.getElementById('chatForm');
-    const chatBox = document.getElementById('chatBox');
-    const textarea = form.querySelector('textarea');
-
-    // Form gönderildiğinde çalışacak ana işlem
-    form.onsubmit = async (e) => {
-        e.preventDefault();
-        sendMessage();
-    };
-
-    // Enter tuşuna basıldığında formu gönder, Shift + Enter yeni satır ekler
-    textarea.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            form.requestSubmit();
-        }
-    });
-
-    // Mesaj gönderme işlevi
-    async function sendMessage() {
-        const formData = new FormData(form);
-        const userInput = formData.get('prompt').trim();
-
-        if (!userInput) {
-            alert("Lütfen bir mesaj girin.");
-            return;
-        }
-
-        // Kullanıcı mesajını ekle
-        const userMessage = document.createElement('div');
-        userMessage.className = 'message user-message';
-        userMessage.textContent = userInput;
-        chatBox.appendChild(userMessage);
-        form.reset();
-
-        // Yükleniyor animasyonu ekle
-        const loadingMessage = document.createElement('div');
-        loadingMessage.className = 'message ai-message loading';
-
-        const dotsContainer = document.createElement('div');
-        dotsContainer.className = 'loading-dots';
-        dotsContainer.innerHTML = `
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        `;
-        loadingMessage.appendChild(dotsContainer);
-        chatBox.appendChild(loadingMessage);
-
-        try {
-            // API'ye POST isteği gönder
-            const response = await fetch('/generate', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-
-            // Yükleniyor mesajını kaldır
-            chatBox.removeChild(loadingMessage);
-
-            // AI cevabını ekle
-            const aiMessage = document.createElement('div');
-            aiMessage.className = 'message ai-message';
-            aiMessage.innerText = result.response || "Beklenmedik bir hata oluştu.";
-            chatBox.appendChild(aiMessage);
-        } catch (error) {
-            chatBox.removeChild(loadingMessage);
-
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'message ai-message';
-            errorMessage.textContent = "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
-            chatBox.appendChild(errorMessage);
-        }
-
-        // Sohbet kutusunu en alta kaydır
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // Yeni Sohbet Başlatma
-    async function startNewChat() {
-        const response = await fetch('/new_chat', { method: 'POST' });
-        const data = await response.json();
-        location.reload();
-    }
-
-    // Geçmiş sohbetleri yükleme
-    async function loadChat(chatId) {
-        const response = await fetch(`/load_chat/${chatId}`);
-        const result = await response.json();
-
-        const chatBox = document.getElementById('chatBox');
-        chatBox.innerHTML = '';
-
-        result.chat_history.forEach(message => {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'message ' + (message.role === 'user' ? 'user-message' : 'ai-message');
-            msgDiv.innerHTML = message.content;
-            chatBox.appendChild(msgDiv);
-        });
-
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // Tüm sohbetleri silme
-    async function deleteAllChats() {
-        const confirmed = confirm("Tüm sohbetleri silmek istediğinize emin misiniz?");
-        if (confirmed) {
-            const response = await fetch('/delete_all_chats', { method: 'POST' });
-            const result = await response.json();
-            alert(result.message);
-            location.reload();
-        }
-    }
-</script>
-
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

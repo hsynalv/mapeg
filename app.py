@@ -17,7 +17,8 @@ load_dotenv()  # .env dosyasını yükle
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 DUTY = """
-Aşağıdaki talimatlar, **Horiar AI** tarafından geliştirilen ve **MAPEG** kurumunun maden sahalarına göndereceği heyet (ekip) sayısını belirleme ya da mevcut ekipleri düzenleme görevlerini üstlenen bir asistanın nasıl yanıt vermesi gerektiğini açıklamaktadır. Asistan, kullanıcı ile **samimi** bir sohbet tonu sürdürmeli, sistemin paylaştığı **güncel heyet verileri** (JSON) doğrultusunda yanıt üretmeli ve bu çıktıyı **geçerli bir JSON** formatında sunmalıdır.
+
+Sen **Horiar AI** tarafından geliştirilen ve **MAPEG** kurumunun maden sahalarına heyet(ekip,takım) sayısını belirleme ya da düzenleme görevlerini üstlenen bir asistansın. Nasıl yanıt vermen gerektiği aşağıdaki kurallarda detaylı şekilde açıklanmaktadır. Kullanıcı ile **samimi** bir sohbet tonu sürdürmeli, eğer varsa; sistemin paylaştığı **güncel heyet(takım, ekip) verileri** (JSON) doğrultusunda yanıt üretmelisin. Çıktıyı her zaman sana belirtilen JSON formatında üretmelisin.
 
 > **Önemli Not**:  
 > - **Kullanıcı** sadece ne yapmak istediğini yazacaktır;  
@@ -79,7 +80,6 @@ Bu alanların ne anlama geldiğini kısaca hatırlayalım:
 
 - `Edit_Details`:  
   - Bir veya birden fazla düzenleme talebi için nesnelerden oluşan bir dizi.  
-  - Sen kimin gruptan çıkarılacağını belirliyorsun ancak yeni kişilerin eklenmesi senin tarafından yapılmıyor. Kapasiteni buna göre ayarla.
   - Her nesne `{ team_id, member_id }` şeklindedir.  
   - `team_id`: Düzenleme yapılacak takımın kimlik numarası (integer).  
   - `member_id`: Silinecek/düzenlenecek üyelerin kimlik numaralarının listesi (örn. `[17]`).
@@ -118,7 +118,7 @@ Bu alanların ne anlama geldiğini kısaca hatırlayalım:
 # İşlev Alanları Açıklaması
 
 1. **Creation (Ekip Oluşturma)**  
-   - Kullanıcının “toplam X ekip oluştur” şeklinde net bir sayı belirtmesi durumunda:  
+   - Kullanıcının “toplam X ekip oluştur "(x>0)"” şeklinde net bir sayı belirtmesi durumunda:  
      - `"Creation" = "true"`,  
      - `Creation_Details` içindeki `Amount_of_Teams` alanına o sayıyı (string olarak) yazın.  
      - `cities_to_assign`: Ekiplerin atanacağı şehir(ler)i liste olarak ekleyin. Örn. `"Ankara", "İstanbul"` gibi.  
@@ -132,7 +132,6 @@ Bu alanların ne anlama geldiğini kısaca hatırlayalım:
      - `Creation` ve `Assign` alanlarını `"false"` yapın.  
      - `Response` içine “X kişi 1. takımdan çıkarıldı” gibi özet bir ifade ekleyebilirsiniz.  
    - **Şehir Değiştirme**: Bu özellik henüz desteklenmediği için, bu tür bir talep gelirse `Response` içerisinde “Ekip şehri değiştirme henüz desteklenmiyor; dilerseniz mevcut ekibi silip yenisini oluşturabilirsiniz.” gibi bir mesaj yazabilirsiniz.
-     -Sen kimin gruptan çıkarılacağını belirliyorsun ancak yeni kişilerin eklenmesi senin tarafından yapılmıyor. Kapasiteni buna göre ayarla. (Eğer kullanıcı sana değiştir derse çıkarma işlemi yapacaksın)
 
 3. **Assign (Değişiklikleri Kaydetme)**  
    - Kullanıcı, yapılan değişiklik(ler)in kaydedilmesini talep ettiğinde:  
@@ -152,22 +151,16 @@ Bu alanların ne anlama geldiğini kısaca hatırlayalım:
 1. **Heyetler 3 kişiden oluşur.**  
    - Bir takımdan 3’ten fazla kişinin çıkarılması istenirse veya 3 kişiden farklı kişilerin olduğu şekilde ekip oluşturmak istenirse, bunun mümkün olmadığını nazikçe belirtin.
 
-2. **0 heyet** oluşturulması talebi geçersizdir.  
-   - Kullanıcıdan ek bilgi isteyin veya bunun mümkün olmadığını açıklayın.
-
-3. **Relevant (yakın ilgili) fakat henüz desteklenmeyen istekler**  
+2. **Relevant (yakın ilgili) fakat henüz desteklenmeyen istekler**  
    - Eğer konu **maden sahaları ve heyet görevlendirmesi** ile **yakından ilgili** fakat asistanın şu anda **yapamadığı** bir özellikse:  
      - Kibarca, “Bu özelliği henüz desteklemiyorum ancak gelecekte Horiar tarafından eklenebilir” şeklinde bilgi verin.  
      - Yanıtı yine **geçerli JSON** formatında üretmeyi unutmayın (örneğin `Response` alanında bu bilgiyi belirtebilirsiniz).
 
-4. **Tamamen konu dışı istekler**  
+3. **Tamamen konu dışı istekler**  
    - Eğer kullanıcı **tamamen başka bir konu** (ör. kodlama ile ilgili bir soru vb.) hakkında yardım istiyorsa:  
      - Kibarca, “Konu dışı olduğu için yardımcı olamıyorum” şeklinde **reddedin**.  
      - Yanıtı yine JSON formatında sunun.  
      - Örneğin `Response` alanında bu reddetme mesajını yazabilirsiniz; `Creation`, `Edit`, `Assign` alanlarını `"false"` tutarak cevap verebilirsiniz.
-
-5. **Kod Bloğu Kullanımı**  
-   - Yanıtınızı **daima** bir kod bloğu (```) içerisinde ve **geçerli JSON** formatında sunmalısınız.
 
 ---
 
@@ -305,7 +298,7 @@ Bu alanların ne anlama geldiğini kısaca hatırlayalım:
     }
   ],
   "Assign": "false",
-  "Response": "1. takımdan Ertan'ı (member_id=17) çıkardım. Başka bir isteğiniz var mı?"
+  "Response": "1. takımdan Ertan'ı (üye numarası=17) çıkardım. Başka bir isteğiniz var mı?"
 }
 ```
 
@@ -426,7 +419,7 @@ Diğer 3 ekibi de asistan kendisi belirleyebilir.
 
 ## Örnek Senaryo 6
 
-**Kullanıcı Mesajı**: “Toplam 5 ekip görevlendir ama Ankara ve İstanbul mutlaka olsun” (Kaydetmek istediğini varsayalım)  
+**Kullanıcı Mesajı**: “5 ekip görevlendir ama Ankara ve İstanbul mutlaka olsun” (Kaydetmek istediğini varsayalım)  
 **Sistemden Gelen JSON**:
 
 ```json
@@ -496,57 +489,9 @@ Diğer 3 ekibi de asistan kendisi belirleyebilir.
 
 ## Örnek Senaryo 7
 
-**Kullanıcı Mesajı**: “6 kişilik 5 tane ekip oluşturabilir misin?”  
-**Sistemden Gelen JSON**:
+**Kullanıcı Mesajı**: “6 kişiden oluşan 5 tane ekip oluşturabilir misin?”  
+**Sistemden Gelen JSON**: [YOK]
 
-```json
-{
-  "teams": [
-    {
-      "team_id": 1,
-      "target_city": "Ağrı",
-      "members": [
-        {
-          "member_id": 62,
-          "role": "Maden Mühendisi",
-          "name": "İLTER ANIK"
-        },
-        {
-          "member_id": 1,
-          "role": "Jeoloji Mühendisi",
-          "name": "SEDAT KARAPINAR"
-        },
-        {
-          "member_id": 17,
-          "role": "Mali Uzman Y.",
-          "name": "ERTAN DUMAN"
-        }
-      ]
-    },
-    {
-      "team_id": 2,
-      "target_city": "Elazığ",
-      "members": [
-        {
-          "member_id": 23,
-          "role": "Maden Mühendisi",
-          "name": "KUBİLAY BALCI"
-        },
-        {
-          "member_id": 12,
-          "role": "Jeoloji Mühendisi",
-          "name": "SELÇUK ÖKSÜZOĞLU"
-        },
-        {
-          "member_id": 56,
-          "role": "Mali Uzman Y.",
-          "name": "DİLEK CAN"
-        }
-      ]
-    }
-  ]
-}
-```
 
 **Asistan Yanıtı (Örnek)**:
 
@@ -575,107 +520,97 @@ Bu talimatlar doğrultusunda, **kullanıcının mesajını** (yalnızca yazılı
 - Henüz geliştirilmemiş ama ilgili bir özellik istenirse “Bu özelliği henüz desteklemiyorum, gelecekte Horiar tarafından eklenebilir” gibi yanıt verin,  
 - Maden sahaları ve görevlendirme konularında **ilgili** soruları normal şekilde yanıtlayın,  
 - **Heyetler 3 kişiden oluşur**, 3’ten fazla kişinin ekibinden çıkartılması veya farklı bir kişi sayısıyla yeni ekip kurulmak istenmesi mümkün değildir (kibarca uyarın),  
-- **0 ekip** istemi geçersizdir, kibarca açıklama isteyin veya reddedin,  
 - **Şehir Değiştirme** gibi bir düzenleme talebi henüz desteklenmez; kullanıcıya yeniden oluşturma veya silme-yeniden ekleme önerisinde bulunun,
-- Edit kısmında sen sadece gruptan hangi üyelerin çıkarılacağını belirliyorsun ancak yeni kişilerin eklenmesi senin tarafından yapılmıyor. Kapasiteni buna göre ayarla. (Eğer kullanıcı sana değiştir derse çıkarma işlemi yapacaksın)
-- Her zaman **kod bloğu** (```) içerisinde, geçerli bir JSON formatında yanıt verin.
-
+- Her zaman uygun bir JSON formatında yanıt verin.
+- Eğer atamaların neye göre yapıldığı sorulursa algoritmayla rastgele yapıldığını belirtebilirsin
 
 """
 
 DUTY_MD = """
 You will receive a JSON object that contains details about teams and their members. Your task is to convert the JSON object into a Markdown document using the following format:
 
-1. Each team should have its own distinct section.  
-2. Use a header for the Team ID and Target City in the format:
+1. Her takım kendi ayrı bölümüne sahip olmalıdır.  
+2. Takım Numarası ve Hedef Şehir için şu formatta bir başlık kullanın:
 
-   # Team ID: {team_id} (Target City: {target_city})
+   # Takım Numarası: {team_id} (Hedef Şehir: {target_city})
 
-3. Below the header, create a table containing the members of the team. The table should have two columns:
-   - `Member Name`
-   - `Member Role`
+3. Başlığın altında, takım üyelerini içeren bir tablo oluşturun. Tablo iki sütun içermelidir:
+   - `Üye İsmi`
+   - `Üye Görevi`
 
-   Example table format:
+   Örnek tablo formatı:
 
-   | Member Name         | Member Role          |
-   |---------------------|----------------------|
-   | MEHMET ALİ SİVRİ    | Maden Mühendisi     |
-   | KORAY İNCİ          | Jeoloji Mühendisi   |
-   | MEHMET BİLİK        | Mali Uzman Y.       |
+   |Üye Numarası|Üye İsmi             | Üye Görevi           |
+   |------------|---------------------|----------------------|
+   |5           |MEHMET ALİ SİVRİ     | Maden Mühendisi      |
+   |8           |KORAY İNCİ           | Jeoloji Mühendisi    |
+   |34          |MEHMET BİLİK         | Mali Uzman Y.        |
 
 
-4. If a field like `name` or `role` is missing in a member, use "N/A" as a placeholder.  
-5. Separate sections for each team with a blank line.  
+4. Eğer bir üyenin `name` veya `role` gibi bir alanı eksikse, "N/A" yer tutucusunu kullanın.  
+5. Her takımı bir boş satır ile ayırın.  
 
-**Do not include any additional text in your response. Only return the Markdown content.**
 
 Input JSON Example:
 
 {
-    "teams": [
-        {
-            "team_id": 1,
-            "target_city": "Bilecik",
-            "members": [
-                {"id": 1, "role": "Maden Mühendisi", "name": "MEHMET ALİ SİVRİ"},
-                {"id": 2, "role": "Jeoloji Mühendisi", "name": "KORAY İNCİ"},
-                {"id": 4, "role": "Mali Uzman Y.", "name": "MEHMET BİLİK"}
-            ]
-        }
-    ]
+  "team_id": 15,
+  "target_city": "Konya",
+  "members": [
+    {
+      "Sıra No": 28,
+      "Adı": "GÖKHAN",
+      "Soyadı": "ÇINARLIDERE",
+      "Görevi": "YMU",
+      "Mesleği": "Maden",
+      "Koordinatörlük": "II-B Grubu Madenler",
+      "Daire Başkanlığı": "DOĞAL TAŞ",
+      "Araç Kullanımı": "Manuel",
+      "Uzmanlık Alanı": "M",
+      "Enlem": 39.9207,
+      "Boylam": 41.27,
+      "Seçilen Sayılar": "[227, 225]"
+    },
+    {
+      "Sıra No": 45,
+      "Adı": "MURAT",
+      "Soyadı": "ŞİMDİ",
+      "Görevi": "YMU",
+      "Mesleği": "Jeoloji",
+      "Koordinatörlük": "II-A Grubu Madenler",
+      "Daire Başkanlığı": "RUHSAT DENETLEME",
+      "Araç Kullanımı": "Manuel",
+      "Uzmanlık Alanı": "M",
+      "Enlem": 36.621,
+      "Boylam": 29.1164,
+      "Seçilen Sayılar": "[225, 214, 221, 225, 225]"
+    },
+    {
+      "ID": 114,
+      "UNVAN": "Mali Uzman Y.",
+      "AD SOYAD": "MEHMET ALİ AKDANOĞLU",
+      "ARAÇ KULLANABİLİR": "E",
+      "Enlem": 38.734,
+      "Boylam": 35.4675
+    }
+  ],
+  "end_date": "2024-12-27T02:45:39.092189"
+}
 
 
 Output Markdown:
 
-# Team ID: 1 (Target City: Bilecik)
+# Takım Numarası: 15 (Hedef Şehir: Konya)
 
-| Member Name         | Member Role          |
-|---------------------|----------------------|
-| MEHMET ALİ SİVRİ    | Maden Mühendisi     |
-| KORAY İNCİ          | Jeoloji Mühendisi   |
-| MEHMET BİLİK        | Mali Uzman Y.       |
+|Üye Numarası|Üye İsmi             | Üye Görevi           |
+|---------   |---------------------|----------------------|
+|28| GÖKHAN ÇANLIDERE              | Maden Mühendisi      |
+|45| MURAT ŞİMDİ                   | Jeoloji Mühendisi    |
+|114| MEHMET ALİ AKDANOĞLU         | Mali Uzman Y.        |
 
 
-Generate this Markdown content for the full JSON input provided. Return only the Markdown output with no explanatory text.
+**Yanıtınızda ek bir metin içermeyin. Sadece Markdown içeriğini döndürün.**
 """
-
-# Excel dosyalarının yolları
-mali_uzmanlar_path = 'mali uzman ve harita mühendisi diğer.xlsx'
-maden_uzmanlari_path = 'MEVCUT YERALTI MADEN UZMANLARI VE GÖREVLERİ düzenli fp.xlsx'
-
-# Excel dosyalarını oku
-mali_uzmanlar_df = pd.read_excel(mali_uzmanlar_path)
-maden_uzmanlari_df = pd.read_excel(maden_uzmanlari_path)
-
-# Mühendisleri filtrele
-maden_uzmanlari_df['Mesleği'] = maden_uzmanlari_df['Mesleği'].str.strip()
-maden_uzmanlari_df.columns = maden_uzmanlari_df.columns.str.strip()
-
-maden_muhendisleri = maden_uzmanlari_df[maden_uzmanlari_df['Mesleği'] == 'Maden']
-jeoloji_muhendisleri = maden_uzmanlari_df[maden_uzmanlari_df['Mesleği'] == 'Jeoloji']
-
-mali_uzmanlari = mali_uzmanlar_df[mali_uzmanlar_df['UNVAN'] == 'Mali Uzman Y.']
-harita_muhendisleri = mali_uzmanlar_df[mali_uzmanlar_df['UNVAN'] == 'Harita Mühendisi']
-
-# Ekip oluşturma değişkenleri
-created_teams = []
-team_history = {}
-pairing_history = {}
-selected_members = set()
-team_id_counter = 1
-WAITING_PERIOD = timedelta(days=1)
-
-# Türkiye'nin 81 ili
-target_cities = [
-    "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin",
-    "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur",
-    "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan",
-    "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkâri", "Hatay", "Iğdır", "Isparta", "İstanbul",
-    "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli",
-    "Kırşehir", "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş",
-    "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas",
-    "Şanlıurfa", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
-]
 
 CHAT_HISTORY_DIR = 'chat_history'
 CHAT_LIST_FILE = os.path.join(CHAT_HISTORY_DIR, 'chat_list.json')
@@ -692,6 +627,7 @@ def load_chat_list(user_id):
             return json.load(f)
     return []
 
+
 def load_chat_history(user_id, chat_id):
     chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{user_id}_{chat_id}.json')
     if os.path.exists(chat_file):
@@ -699,10 +635,12 @@ def load_chat_history(user_id, chat_id):
             return json.load(f)
     return {"messages": []}
 
+
 def save_chat_history(user_id, chat_id, chat_data):
     chat_file = os.path.join(CHAT_HISTORY_DIR, f'chat_{user_id}_{chat_id}.json')
     with open(chat_file, 'w', encoding='utf-8') as f:
         json.dump(chat_data, f, ensure_ascii=False, indent=4)
+
 
 def save_chat_to_list(user_id, chat_id):
     chat_list = load_chat_list(user_id)
@@ -713,79 +651,26 @@ def save_chat_to_list(user_id, chat_id):
     with open(user_chat_list_file, 'w', encoding='utf-8') as f:
         json.dump(chat_list, f, ensure_ascii=False, indent=4)
 
-def create_team(team_id):
-    global team_history, pairing_history, selected_members
-
-    available_maden = maden_muhendisleri[~maden_muhendisleri['Sıra No'].isin(selected_members)]
-    available_jeoloji = jeoloji_muhendisleri[~jeoloji_muhendisleri['Sıra No'].isin(selected_members)]
-    available_mali = mali_uzmanlari[~mali_uzmanlari['ID'].isin(selected_members)]
-
-    if available_maden.empty or available_jeoloji.empty or available_mali.empty:
-        return None
-
-    maden_muh = available_maden.sample(1).iloc[0]
-    jeoloji_muh = available_jeoloji.sample(1).iloc[0]
-    mali_uzman = available_mali.sample(1).iloc[0]
-
-    team_members = [maden_muh['Sıra No'], jeoloji_muh['Sıra No'], mali_uzman['ID']]
-    now = datetime.now()
-
-    for member in team_members:
-        if member not in team_history:
-            team_history[member] = []
-        team_history[member].append(now)
-
-    selected_members.update(team_members)
-
-    team = {
-        "team_id": team_id,
-        "target_city": random.choice(target_cities),
-        "members": [
-            {"role": "Maden Mühendisi", "name": f"{maden_muh['Adı']} {maden_muh['Soyadı']}"},
-            {"role": "Jeoloji Mühendisi", "name": f"{jeoloji_muh['Adı']} {jeoloji_muh['Soyadı']}"},
-            {"role": mali_uzman['UNVAN'], "name": mali_uzman['AD SOYAD']}
-        ]
-    }
-    return team
-
-def generate_teams(num_teams):
-    global team_id_counter
-    teams = []
-
-    for _ in range(num_teams):
-        team = create_team(team_id_counter)
-        if team:
-            teams.append(team)
-            team_id_counter += 1
-        else:
-            break
-
-    result = {
-        "teams": teams,
-        "total_teams": len(teams),
-        "date_created": datetime.now().strftime("%Y-%m-%d")
-    }
-
-    return result
-
 
 @app.route('/', methods=['GET'])
 def index():
     user_id = request.cookies.get('user_id')  # Kullanıcı ID'si çerezi
 
     if user_id:
-        chat_list = load_chat_list(user_id)
+        raw_chat_list = load_chat_list(user_id)
+        chat_list = [{"id": chat_id, "name": f"{index + 1}. Sohbet"} for index, chat_id in enumerate(raw_chat_list)]
+        chat_list.reverse()
         response = make_response(render_template('index.html', chat_list=chat_list))
     else:
         response = make_response(render_template('index.html', chat_list=[]))
         user_id = str(uuid.uuid4())
         response.set_cookie('user_id', user_id, max_age=90 * 24 * 60 * 60)  # 3 ay
 
-
     chat_id = str(uuid.uuid4())
     response.set_cookie('chat_id', chat_id, max_age=90 * 24 * 60 * 60)  # 3 ay
 
     return response
+
 
 # Yeni sohbet başlat
 @app.route('/new_chat', methods=['POST'])
@@ -804,15 +689,17 @@ def new_chat():
     response.set_cookie('user_id', user_id, max_age=90 * 24 * 60 * 60)
     return response
 
+
 @app.route('/load_chat/<chat_id>', methods=['GET'])
 def load_chat(chat_id):
     user_id = request.cookies.get('user_id')
     chat_data = load_chat_history(user_id, chat_id)
 
     response = make_response(jsonify({"chat_history": chat_data['messages']}))
-    response.set_cookie("chat_id",chat_id)
+    response.set_cookie("chat_id", chat_id)
 
     return response
+
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -822,26 +709,31 @@ def generate():
 
     if not user_id:
         user_id = str(uuid.uuid4())
-        save_chat_to_list(user_id, chat_id)
 
     # Sohbet listesine eklenip eklenmediğini kontrol et
     save_chat_to_list(user_id, chat_id)  # Eğer listede yoksa ekler
 
     chat_data = load_chat_history(user_id, chat_id)
-    content = f"Geçmiş konuşmalar: {str(chat_data['messages'])}. Son Soru: {user_input}"
     chat_data['messages'].append({"role": "user", "content": user_input})
 
+    content = f"Geçmiş konuşmalar: {str(chat_data['messages'])}. Son Soru: {user_input}"
+    print(content)
 
     try:
         response = openai.chat.completions.create(
-            model="gpt-4o-2024-11-20",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": DUTY},
                 {"role": "user", "content": content}
             ],
             response_format={
-                "type" : "json_object"
-            }
+                "type": "json_object"
+            },
+            temperature=0.7,
+            max_completion_tokens=2000,
+            top_p=0.9,
+            frequency_penalty=0.1,
+            presence_penalty=0
         )
         print(response.choices[0].message.content)
         first_query = json.loads(response.choices[0].message.content)
@@ -853,43 +745,61 @@ def generate():
         print(is_editable)
         print(is_assign)
 
-        if (is_creation) and ((first_query["Creation_Details"]["Amount_of_Teams"] != "") and (
+        if is_creation and ((first_query["Creation_Details"]["Amount_of_Teams"] != "") and (
                 len(first_query["Creation_Details"]["cities_to_assign"]) > 0)):
             teams = []
             assistant = MAPEGTeamAssignment()
 
+            a = 1
+
             for city in first_query["Creation_Details"]["cities_to_assign"]:
+                print(f"{a}. takım oluşturuldu")
+                a+=1
                 team = assistant.create_team(target_city=city, end_date=datetime.now())
                 if team:  # Only append if team creation was successful
                     teams.append(team)
                 else:
                     print(f"Failed to create team for city: {city}")
-
-            print(team)
+                    final_output = f"Failed to create team for city: {city}"
 
             formatted_result = openai.chat.completions.create(
-                model="gpt-4o-2024-11-20",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": DUTY_MD},
                     {"role": "user", "content": f"{json.dumps(teams, ensure_ascii=False)}"}
                 ]
             )
-            final_output = formatted_result.choices[0].message.content
+
+            final_output = first_query["Response"] + "<br><br>" + formatted_result.choices[0].message.content
             chat_data['messages'].append({"role": "assistant", "content": final_output})
             save_chat_history(user_id, chat_id, chat_data)
             print(final_output)
 
-            #print(team)
 
-        elif (is_editable) and ((first_query["Edit_Details"][0]["team_id"] > 0) and (len(first_query["Edit_Details"][0]["member_id"]) > 0)):
+        elif is_editable and ((first_query["Edit_Details"][0]["team_id"] > 0) and (
+                len(first_query["Edit_Details"][0]["member_id"]) > 0)):
             print("is editable")
+
+            teams = []
             assistant = MAPEGTeamAssignment()
 
             team_id = first_query["Edit_Details"][0]["team_id"]
-            member_id = first_query["Edit_Details"][0]["member_id"][0]
 
-            # assistant.update_created_teams(team_id, member_id)
-            final_output = first_query["Response"]
+            for member in first_query["Edit_Details"][0]["member_id"]:
+                team = assistant.update_created_teams(team_id, member)
+                teams.append(team)
+
+            contentforsecond = f"Geçmiş konuşmalar: {str(chat_data['messages'])}. Güncellenmiş takım: {str(teams)}"
+
+            formatted_result = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": DUTY_MD},
+                    {"role": "user", "content": contentforsecond}
+                ]
+            )
+
+            final_output = first_query["Response"] + "<br><br>" + formatted_result.choices[0].message.content
             chat_data['messages'].append({"role": "assistant", "content": final_output})
             save_chat_history(user_id, chat_id, chat_data)
 
@@ -906,39 +816,10 @@ def generate():
             save_chat_history(user_id, chat_id, chat_data)
             return jsonify({"response": first_query["Response"]})
     except Exception as e:
+        final_output = "Bir hatayla karşılaşıldı. Lütfen tekrar deneyiniz..."
         print(e)
 
     return jsonify({"response": final_output})
-
-"""
-        if is_available:
-            ekip_sayisi = int(model_output.get("Sayı"))
-            result = generate_teams(ekip_sayisi)
-            formatted_result = openai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "Verilen JSON formatındaki ekip listesini HTML formatında aşağıdaki gibi düzenle:\n"
-                                                 "Her ekibi madde işareti veya numaralandırma ile alt alta yaz. "
-                                                 "Örneğin:\n"
-                                                 "<ul>\n"
-                                                 "<li><strong>Ekip 1 (Ankara)</strong><br>- Maden Mühendisi: Ahmet Özdemir<br>- Jeoloji Mühendisi: Mehmet Kanbur<br>- Mali Uzman: Ertan Duman</li>\n"
-                                                 "<li><strong>Ekip 2 (İzmir)</strong><br>- Maden Mühendisi: Hasan Yılmaz<br>- Jeoloji Mühendisi: Murat Gürbüz<br>- Mali Uzman: Veli Demir</li>\n"
-                                                 "</ul>"},
-                    {"role": "user", "content": f"{json.dumps(result, ensure_ascii=False)}"}
-                ]
-            )
-            final_output = formatted_result.choices[0].message.content
-        else:
-            final_output = model_output.get("Yanıt")
-
-    except Exception as e:
-        final_output = f"Hata: {str(e)}"
-
-    chat_data['messages'].append({"role": "assistant", "content": final_output})
-    save_chat_history(user_id, chat_id, chat_data)
-
-    return jsonify({"response": final_output})
-"""
 
 
 @app.route('/delete_all_chats', methods=['POST'])
@@ -953,6 +834,12 @@ def delete_all_chats():
     except Exception as e:
         return jsonify({"message": f"Hata: {str(e)}"}), 500
 
+
+@app.route('/resetTeams', methods=['POST'])
+def resetTeams():
+    assistant = MAPEGTeamAssignment()
+    assistant.reset_created_teams()
+    return jsonify({"message": "Tüm takımlar başarıyla sıfırlandı"})
 
 
 if __name__ == '__main__':
