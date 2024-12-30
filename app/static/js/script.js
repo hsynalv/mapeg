@@ -1,9 +1,25 @@
 const sidebar = document.querySelector("#sidebar");
 const hide_sidebar = document.querySelector(".hide-sidebar");
 
-hide_sidebar.addEventListener( "click", function() {
-    sidebar.classList.toggle( "hidden" );
-} );
+// Toggle sidebar visibility
+hide_sidebar.addEventListener("click", function () {
+    sidebar.classList.toggle("hidden");
+});
+
+// Automatically hide sidebar when screen is resized to small
+window.addEventListener("resize", function () {
+    if (window.innerWidth < 768) { // Adjust the width threshold as needed
+        sidebar.classList.add("hidden");
+    } else {
+        sidebar.classList.remove("hidden"); // Reset for larger screens
+    }
+});
+
+// Initial check for small screen on page load
+if (window.innerWidth < 768) {
+    sidebar.classList.add("hidden");
+}
+
 
     const form = document.getElementById('chatForm');
     const chatBox = document.getElementById('chatBox');
