@@ -684,7 +684,7 @@ p {
 /* Tablet (768px ve altı) */
 @media (max-width: 768px) {
     .sidebar {
-        width: 200px;
+        width: 80%;
     }
 
     .chat-container {
@@ -708,7 +708,7 @@ p {
 
     .sidebar {
         position: relative;
-        width: 100%;
+        width: 80%;
         left: 0;
         top: 0;
         margin-bottom: 15px;
@@ -733,22 +733,30 @@ p {
     }
 
     .sidebar img {
-        width: 120px;
+        display: flex;
+        width: auto;
     }
 }
 
 /* Küçük Mobil (320px ve altı) */
 @media (max-width: 320px) {
     .chat-container {
+        display: flex;
         height: 60vh;
     }
 
+    #sidebar {
+        display: block !important;
+    }
+
     .sidebar img {
-        width: 100px;
+        display: flex;
+        width: auto;
     }
 
     .chat-input textarea {
         font-size: 12px;
         padding: 8px;
     }
+    
 }

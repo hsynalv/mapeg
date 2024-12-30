@@ -9,7 +9,7 @@ import random
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-from Arayüz.mapeg_team import MAPEGTeamAssignment
+from mapeg_team import MAPEGTeamAssignment
 
 app = Flask(__name__, static_folder='app/static', template_folder='app/templates')
 
